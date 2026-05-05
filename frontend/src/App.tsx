@@ -1,13 +1,18 @@
+import Navbar from './components/Navbar';
+import Carousel from './components/Carousel';
+import ProductList from './components/ProductList';
+import Footer from './components/Footer';
+
 function App() {
   return (
-    <>
-      <h1 className="text-3xl font-bold text-blue-500">
-        Hello {import.meta.env.VITE_APP_NAME}
-      </h1>
-      <p className="mt-4 text-gray-600">
-        API URL: {import.meta.env.VITE_API_URL}
-      </p>
-    </>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Navbar />
+      <main className="w-full flex-grow">
+        <Carousel />
+        <ProductList />
+      </main>
+      <Footer />
+    </div>
   );
 }
 
