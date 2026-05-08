@@ -1,136 +1,111 @@
--- ===================== USERS =====================
-CREATE TABLE "users"(
-    "id" UUID NOT NULL DEFAULT UUID_GENERATE_V4(), -- PK
-    "name" VARCHAR(255) NOT NULL, -- tên người dùng
-    "email" VARCHAR(255) NOT NULL, -- email đăng nhập
-    "password" VARCHAR(255) NOT NULL, -- mật khẩu (hash)
-    "phone" VARCHAR(20) NULL, -- số điện thoại
-    "created_at" TIMESTAMP(0) WITHOUT TIME ZONE NULL DEFAULT CURRENT_TIMESTAMP -- thời gian tạo
+CREATE SCHEMA "public";
+CREATE TABLE "address" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"user_id" uuid NOT NULL,
+	"address_line" text NOT NULL,
+	"city" varchar(100),
+	"district" varchar(100),
+	"ward" varchar(100),
+	"is_default" boolean
 );
-ALTER TABLE "users" ADD PRIMARY KEY("id");
-ALTER TABLE "users" ADD CONSTRAINT "users_email_unique" UNIQUE("email"); -- unique email
-
-
--- ===================== ADDRESS =====================
-CREATE TABLE "address"(
-    "id" UUID NOT NULL DEFAULT UUID_GENERATE_V4(), -- PK
-    "user_id" UUID NOT NULL, -- FK -> users
-    "address_line" TEXT NOT NULL, -- địa chỉ chi tiết
-    "city" VARCHAR(100) NULL,
-    "district" VARCHAR(100) NULL,
-    "ward" VARCHAR(100) NULL,
-    "is_default" BOOLEAN NULL -- địa chỉ mặc định
+CREATE TABLE "cart_item" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"user_id" uuid NOT NULL UNIQUE,
+	"product_id" uuid NOT NULL UNIQUE,
+	"quantity" integer NOT NULL,
+	CONSTRAINT "cart_item_user_id_product_id_unique" UNIQUE("user_id","product_id")
 );
-ALTER TABLE "address" ADD PRIMARY KEY("id");
-
-
--- ===================== PRODUCT =====================
-CREATE TABLE "product"(
-    "id" UUID NOT NULL DEFAULT UUID_GENERATE_V4(), -- PK
-    "name" VARCHAR(255) NOT NULL, -- tên sản phẩm
-    "price" DECIMAL(12, 2) NOT NULL, -- giá
-    "description" TEXT NULL,
-    "status" VARCHAR(255) NULL DEFAULT 'ACTIVE', -- trạng thái
-    "created_at" TIMESTAMP(0) WITHOUT TIME ZONE NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE "coupon" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"code" varchar(50) NOT NULL CONSTRAINT "coupon_code_unique" UNIQUE,
+	"discount_value" numeric(12, 2) NOT NULL,
+	"expiry_date" timestamp,
+	"min_order_value" numeric(12, 2),
+	"max_discount" numeric(12, 2)
 );
-ALTER TABLE "product" ADD PRIMARY KEY("id");
-
-
--- ===================== INVENTORY =====================
-CREATE TABLE "inventory"(
-    "product_id" UUID NOT NULL, -- FK -> product
-    "quantity" INTEGER NOT NULL -- số lượng tồn kho
+CREATE TABLE "inventory" (
+	"product_id" uuid PRIMARY KEY,
+	"quantity" integer NOT NULL
 );
-ALTER TABLE "inventory" ADD PRIMARY KEY("product_id");
-
-
--- ===================== CART ITEM =====================
-CREATE TABLE "cart_item"(
-    "id" UUID NOT NULL DEFAULT UUID_GENERATE_V4(), -- PK
-    "user_id" UUID NOT NULL, -- FK -> users
-    "product_id" UUID NOT NULL, -- FK -> product
-    "quantity" INTEGER NOT NULL -- số lượng
+CREATE TABLE "order_coupon" (
+	"order_coupon_id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"order_id" uuid NOT NULL,
+	"coupon_id" uuid NOT NULL
 );
-ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_user_id_product_id_unique" UNIQUE("user_id", "product_id"); -- 1 user chỉ có 1 record / product
-ALTER TABLE "cart_item" ADD PRIMARY KEY("id");
-CREATE INDEX "cart_item_user_id_index" ON "cart_item"("user_id");
-CREATE INDEX "cart_item_product_id_index" ON "cart_item"("product_id");
-
-
--- ===================== ORDERS =====================
-CREATE TABLE "orders"(
-    "id" UUID NOT NULL DEFAULT UUID_GENERATE_V4(), -- PK
-    "user_id" UUID NOT NULL, -- FK -> users
-    "address_id" UUID NOT NULL, -- FK -> address
-    "total_price" DECIMAL(12, 2) NOT NULL, -- tổng tiền sản phẩm
-    "discount" DECIMAL(12, 2) NULL, -- giảm giá
-    "shipping_fee" DECIMAL(12, 2) NULL, -- phí ship
-    "final_price" DECIMAL(12, 2) NOT NULL, -- tổng cuối
-    "status" VARCHAR(255) NULL DEFAULT 'PENDING', -- trạng thái đơn
-    "created_at" TIMESTAMP(0) WITHOUT TIME ZONE NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE "order_item" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"order_id" uuid NOT NULL,
+	"product_id" uuid NOT NULL,
+	"quantity" integer NOT NULL,
+	"price" numeric(12, 2) NOT NULL
 );
-ALTER TABLE "orders" ADD PRIMARY KEY("id");
-CREATE INDEX "orders_user_id_index" ON "orders"("user_id");
-CREATE INDEX "orders_status_index" ON "orders"("status");
-
-
--- ===================== ORDER ITEM =====================
-CREATE TABLE "order_item"(
-    "id" UUID NOT NULL DEFAULT UUID_GENERATE_V4(), -- PK
-    "order_id" UUID NOT NULL, -- FK -> orders
-    "product_id" UUID NOT NULL, -- FK -> product
-    "quantity" INTEGER NOT NULL,
-    "price" DECIMAL(12, 2) NOT NULL -- giá tại thời điểm mua
+CREATE TABLE "orders" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"user_id" uuid NOT NULL,
+	"address_id" uuid NOT NULL,
+	"subtotal" numeric(12, 2) NOT NULL,
+	"discount" numeric(12, 2),
+	"shipping_fee" numeric(12, 2),
+	"final_price" numeric(12, 2) NOT NULL,
+	"status" varchar(255) DEFAULT 'PENDING',
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
-ALTER TABLE "order_item" ADD PRIMARY KEY("id");
-CREATE INDEX "order_item_order_id_index" ON "order_item"("order_id");
-CREATE INDEX "order_item_product_id_index" ON "order_item"("product_id");
-
-
--- ===================== COUPON =====================
-CREATE TABLE "coupon"(
-    "id" UUID NOT NULL DEFAULT UUID_GENERATE_V4(), -- PK
-    "code" VARCHAR(50) NOT NULL, -- mã giảm giá
-    "discount_value" DECIMAL(12, 2) NOT NULL, -- giá trị giảm
-    "type" INTEGER NOT NULL, -- loại (%, fixed)
-    "expiry_date" TIMESTAMP(0) WITHOUT TIME ZONE NULL, -- hạn sử dụng
-    "min_order_value" DECIMAL(12, 2) NULL, -- đơn tối thiểu
-    "max_discount" DECIMAL(12, 2) NULL -- giảm tối đa
+CREATE TABLE "payment" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"order_id" uuid NOT NULL CONSTRAINT "payment_order_id_unique" UNIQUE,
+	"method" integer NOT NULL,
+	"status" varchar(255) DEFAULT 'PENDING',
+	"paid_at" timestamp
 );
-ALTER TABLE "coupon" ADD PRIMARY KEY("id");
-ALTER TABLE "coupon" ADD CONSTRAINT "coupon_code_unique" UNIQUE("code");
-
-
--- ===================== ORDER COUPON =====================
-CREATE TABLE "order_coupon"(
-    "order_coupon_id" UUID NOT NULL DEFAULT UUID_GENERATE_V4(), -- PK
-    "order_id" UUID NOT NULL, -- FK -> orders
-    "coupon_id" UUID NOT NULL -- FK -> coupon
+CREATE TABLE "product" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"name" varchar(255) NOT NULL,
+	"price" numeric(12, 2) NOT NULL,
+	"description" text,
+	"status" varchar(255) DEFAULT 'ACTIVE',
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
-ALTER TABLE "order_coupon" ADD PRIMARY KEY("order_coupon_id");
-
-
--- ===================== PAYMENT =====================
-CREATE TABLE "payment"(
-    "id" UUID NOT NULL DEFAULT UUID_GENERATE_V4(), -- PK
-    "order_id" UUID NOT NULL, -- FK -> orders
-    "method" INTEGER NOT NULL, -- phương thức thanh toán
-    "status" VARCHAR(255) NULL DEFAULT 'PENDING', -- trạng thái
-    "paid_at" TIMESTAMP(0) WITHOUT TIME ZONE NULL -- thời gian thanh toán
+CREATE TABLE "test" (
+	"id" bigint PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY (sequence name "test_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1),
+	"name" varchar(255)
 );
-ALTER TABLE "payment" ADD PRIMARY KEY("id");
-ALTER TABLE "payment" ADD CONSTRAINT "payment_order_id_unique" UNIQUE("order_id"); -- 1 order có 1 payment
-
-
--- ===================== FOREIGN KEYS =====================
-ALTER TABLE "order_coupon" ADD CONSTRAINT "order_coupon_order_id_foreign" FOREIGN KEY("order_id") REFERENCES "orders"("id");
-ALTER TABLE "order_item" ADD CONSTRAINT "order_item_order_id_foreign" FOREIGN KEY("order_id") REFERENCES "orders"("id");
-ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_foreign" FOREIGN KEY("user_id") REFERENCES "users"("id");
-ALTER TABLE "payment" ADD CONSTRAINT "payment_order_id_foreign" FOREIGN KEY("order_id") REFERENCES "orders"("id");
-ALTER TABLE "orders" ADD CONSTRAINT "orders_address_id_foreign" FOREIGN KEY("address_id") REFERENCES "address"("id");
-ALTER TABLE "order_coupon" ADD CONSTRAINT "order_coupon_coupon_id_foreign" FOREIGN KEY("coupon_id") REFERENCES "coupon"("id");
-ALTER TABLE "order_item" ADD CONSTRAINT "order_item_product_id_foreign" FOREIGN KEY("product_id") REFERENCES "product"("id");
-ALTER TABLE "inventory" ADD CONSTRAINT "inventory_product_id_foreign" FOREIGN KEY("product_id") REFERENCES "product"("id");
-ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_user_id_foreign" FOREIGN KEY("user_id") REFERENCES "users"("id");
-ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_product_id_foreign" FOREIGN KEY("product_id") REFERENCES "product"("id");
-ALTER TABLE "address" ADD CONSTRAINT "address_user_id_foreign" FOREIGN KEY("user_id") REFERENCES "users"("id");
+CREATE TABLE "users" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"email" varchar(255) NOT NULL CONSTRAINT "users_email_unique" UNIQUE,
+	"hash_password" varchar(255) NOT NULL,
+	"phone" varchar(20),
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+	"full_name" varchar(255)
+);
+CREATE UNIQUE INDEX "address_pkey" ON "address" ("id");
+CREATE UNIQUE INDEX "cart_item_pkey" ON "cart_item" ("id");
+CREATE INDEX "cart_item_product_id_index" ON "cart_item" ("product_id");
+CREATE INDEX "cart_item_user_id_index" ON "cart_item" ("user_id");
+CREATE UNIQUE INDEX "cart_item_user_id_product_id_unique" ON "cart_item" ("user_id","product_id");
+CREATE UNIQUE INDEX "coupon_code_unique" ON "coupon" ("code");
+CREATE UNIQUE INDEX "coupon_pkey" ON "coupon" ("id");
+CREATE UNIQUE INDEX "inventory_pkey" ON "inventory" ("product_id");
+CREATE UNIQUE INDEX "order_coupon_pkey" ON "order_coupon" ("order_coupon_id");
+CREATE INDEX "order_item_order_id_index" ON "order_item" ("order_id");
+CREATE UNIQUE INDEX "order_item_pkey" ON "order_item" ("id");
+CREATE INDEX "order_item_product_id_index" ON "order_item" ("product_id");
+CREATE UNIQUE INDEX "orders_pkey" ON "orders" ("id");
+CREATE INDEX "orders_status_index" ON "orders" ("status");
+CREATE INDEX "orders_user_id_index" ON "orders" ("user_id");
+CREATE UNIQUE INDEX "payment_order_id_unique" ON "payment" ("order_id");
+CREATE UNIQUE INDEX "payment_pkey" ON "payment" ("id");
+CREATE UNIQUE INDEX "product_pkey" ON "product" ("id");
+CREATE UNIQUE INDEX "test_pkey" ON "test" ("id");
+CREATE UNIQUE INDEX "users_email_unique" ON "users" ("email");
+CREATE UNIQUE INDEX "users_pkey" ON "users" ("id");
+ALTER TABLE "address" ADD CONSTRAINT "address_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
+ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id");
+ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
+ALTER TABLE "inventory" ADD CONSTRAINT "inventory_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id");
+ALTER TABLE "order_coupon" ADD CONSTRAINT "order_coupon_coupon_id_foreign" FOREIGN KEY ("coupon_id") REFERENCES "coupon"("id");
+ALTER TABLE "order_coupon" ADD CONSTRAINT "order_coupon_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
+ALTER TABLE "order_item" ADD CONSTRAINT "order_item_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
+ALTER TABLE "order_item" ADD CONSTRAINT "order_item_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id");
+ALTER TABLE "orders" ADD CONSTRAINT "orders_address_id_foreign" FOREIGN KEY ("address_id") REFERENCES "address"("id");
+ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
+ALTER TABLE "payment" ADD CONSTRAINT "payment_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
