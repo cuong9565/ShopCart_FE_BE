@@ -15,6 +15,12 @@ CREATE TABLE "cart_item" (
 	"quantity" integer NOT NULL,
 	CONSTRAINT "cart_item_user_id_product_id_unique" UNIQUE("user_id","product_id")
 );
+CREATE TABLE "category" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"name" varchar(100) NOT NULL CONSTRAINT "category_name_key" UNIQUE,
+	"description" text,
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE "coupon" (
 	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 	"code" varchar(50) NOT NULL CONSTRAINT "coupon_code_unique" UNIQUE,
@@ -63,6 +69,16 @@ CREATE TABLE "product" (
 	"price" numeric(12, 2) NOT NULL,
 	"description" text,
 	"status" varchar(255) DEFAULT 'ACTIVE',
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+	"category_id" uuid
+);
+CREATE TABLE "product_image" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"product_id" uuid NOT NULL,
+	"image_url" text NOT NULL,
+	"storage_path" text,
+	"is_thumbnail" boolean DEFAULT false,
+	"sort_order" integer DEFAULT 0,
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE "test" (
@@ -82,6 +98,8 @@ CREATE UNIQUE INDEX "cart_item_pkey" ON "cart_item" ("id");
 CREATE INDEX "cart_item_product_id_index" ON "cart_item" ("product_id");
 CREATE INDEX "cart_item_user_id_index" ON "cart_item" ("user_id");
 CREATE UNIQUE INDEX "cart_item_user_id_product_id_unique" ON "cart_item" ("user_id","product_id");
+CREATE UNIQUE INDEX "category_name_key" ON "category" ("name");
+CREATE UNIQUE INDEX "category_pkey" ON "category" ("id");
 CREATE UNIQUE INDEX "coupon_code_unique" ON "coupon" ("code");
 CREATE UNIQUE INDEX "coupon_pkey" ON "coupon" ("id");
 CREATE UNIQUE INDEX "inventory_pkey" ON "inventory" ("product_id");
@@ -94,7 +112,10 @@ CREATE INDEX "orders_status_index" ON "orders" ("status");
 CREATE INDEX "orders_user_id_index" ON "orders" ("user_id");
 CREATE UNIQUE INDEX "payment_order_id_unique" ON "payment" ("order_id");
 CREATE UNIQUE INDEX "payment_pkey" ON "payment" ("id");
+CREATE INDEX "product_category_id_index" ON "product" ("category_id");
 CREATE UNIQUE INDEX "product_pkey" ON "product" ("id");
+CREATE UNIQUE INDEX "product_image_pkey" ON "product_image" ("id");
+CREATE INDEX "product_image_product_id_index" ON "product_image" ("product_id");
 CREATE UNIQUE INDEX "test_pkey" ON "test" ("id");
 CREATE UNIQUE INDEX "users_email_unique" ON "users" ("email");
 CREATE UNIQUE INDEX "users_pkey" ON "users" ("id");
@@ -109,3 +130,5 @@ ALTER TABLE "order_item" ADD CONSTRAINT "order_item_product_id_foreign" FOREIGN 
 ALTER TABLE "orders" ADD CONSTRAINT "orders_address_id_foreign" FOREIGN KEY ("address_id") REFERENCES "address"("id");
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
 ALTER TABLE "payment" ADD CONSTRAINT "payment_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
+ALTER TABLE "product" ADD CONSTRAINT "product_category_id_foreign" FOREIGN KEY ("category_id") REFERENCES "category"("id");
+ALTER TABLE "product_image" ADD CONSTRAINT "product_image_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id") ON DELETE CASCADE;
