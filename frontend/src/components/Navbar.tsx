@@ -1,33 +1,58 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShoppingCart, faUser, faFlask } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faShoppingCart,
+  faUser,
+  faFlask,
+} from "@fortawesome/free-solid-svg-icons";
 
-interface NavbarProps {
-  onNavigate: (view: 'home' | 'test') => void;
-  currentView: 'home' | 'test';
-}
+import { useNavigate, useLocation } from "react-router-dom";
+import { useCart } from "./CartContext";
 
-const Navbar = ({ onNavigate, currentView }: NavbarProps) => {
+const Navbar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { cart } = useCart();
+
+  // Tổng số lượng sản phẩm
+  const total = cart.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
+
   return (
     <nav className="flex items-center justify-between px-6 py-4 bg-white shadow-md sticky top-0 z-50">
-      {/* Left: Logo */}
+      
+      {/* Left */}
       <div className="flex items-center space-x-4">
-        <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+        
+        {/* Logo */}
+        <img
+          src="/logo.png"
+          alt="Logo"
+          className="h-10 w-auto cursor-pointer"
+          onClick={() => navigate("/")}
+        />
+
+        {/* Home */}
         <button
-          onClick={() => onNavigate('home')}
+          onClick={() => navigate("/")}
           className={`px-3 py-1 rounded transition-colors ${
-            currentView === 'home' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-700 hover:text-blue-600'
+            location.pathname === "/"
+              ? "bg-blue-500 text-white"
+              : "text-gray-700 hover:text-blue-600"
           }`}
         >
           Home
         </button>
+
+        {/* Test API */}
         <button
-          onClick={() => onNavigate('test')}
-          className={`px-3 py-1 rounded transition-colors ${
-            currentView === 'test' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-700 hover:text-blue-600'
+          onClick={() => navigate("/test")}
+          className={`px-3 py-1 rounded transition-colors flex items-center ${
+            location.pathname === "/test"
+              ? "bg-blue-500 text-white"
+              : "text-gray-700 hover:text-blue-600"
           }`}
         >
           <FontAwesomeIcon icon={faFlask} className="mr-1" />
@@ -35,15 +60,29 @@ const Navbar = ({ onNavigate, currentView }: NavbarProps) => {
         </button>
       </div>
 
-      {/* Right: Icons */}
+      {/* Right */}
       <div className="flex items-center space-x-6">
-        <button className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer relative">
+        
+        {/* Cart */}
+        <button
+          onClick={() => navigate("/cart")}
+          className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer relative"
+        >
           <FontAwesomeIcon icon={faShoppingCart} size="lg" />
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-            0
-          </span>
+
+          {/* Badge */}
+          {total > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {total}
+            </span>
+          )}
         </button>
-        <button className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer">
+
+        {/* User */}
+        <button
+          onClick={() => navigate("/profile")}
+          className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer"
+        >
           <FontAwesomeIcon icon={faUser} size="lg" />
         </button>
       </div>

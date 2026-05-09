@@ -1,30 +1,79 @@
 import { dummyProducts, type Product } from '../data/products';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCartPlus, faHeart } from '@fortawesome/free-solid-svg-icons';
+import { faCartPlus } from '@fortawesome/free-solid-svg-icons';
+import { useCart } from "../components/CartContext";
 
 const ProductCard = ({ product }: { product: Product }) => {
+  const { addToCart } = useCart();
+
+  const isOutOfStock = product.stock === 0;
+  const isInactive = product.status !== "ACTIVE";
+  const isDisabled = isOutOfStock || isInactive;
+
+  const handleAdd = () => {
+    if (!product) {
+      alert("Sản phẩm không tồn tại");
+      return;
+    }
+    if (isInactive) {
+      alert("Sản phẩm đã ngừng bán");
+      return;
+    }
+    if (isOutOfStock) {
+      alert("Sản phẩm đã hết hàng");
+      return;
+    }
+    addToCart(product);
+  };
+
   return (
     <div className="bg-white rounded-xl hover:shadow-xl transition-all duration-300 group overflow-hidden border border-gray-100 flex flex-col h-full">
-      {/* Product Image */}
+      {/* Image */}
       <div className="relative overflow-hidden aspect-square">
         <img
           src={product.image}
           alt={product.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
+        {isOutOfStock && (
+          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+            Hết hàng
+          </span>
+        )}
+        {isInactive && (
+          <span className="absolute top-2 right-2 bg-gray-500 text-white text-xs px-2 py-1 rounded">
+            Ngừng bán
+          </span>
+        )}
       </div>
 
-      {/* Product Info */}
+      {/* Info */}
       <div className="p-5 flex flex-col flex-grow">
-        <h3 className="text-lg font-bold text-gray-800 mb-2 transition-colors line-clamp-2">
+        <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2">
           {product.name}
         </h3>
 
-        <div className="mt-auto flex items-center justify-between">
-          <span className="text-xl font-black text-gray-900">
-            {product.price.toLocaleString()}đ
-          </span>
-          <button className="p-3 cursor-pointer">
+        {/* Giá */}
+        <span className="text-xl font-black text-gray-900 mb-2">
+          {product.price.toLocaleString("vi-VN")}đ
+        </span>
+
+        {/*  Tồn kho */}
+        <p className="text-sm text-gray-500 mb-3">
+          Còn lại: {product.stock}
+        </p>
+        <div className="mt-auto flex items-center justify-between">          
+          {/* Nút mua */}
+          <button
+            onClick={handleAdd}
+            disabled={isDisabled}
+            className={`p-3 rounded-lg transition
+              ${
+                isDisabled
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-500 text-white hover:bg-blue-600"
+              }`}
+          >
             <FontAwesomeIcon icon={faCartPlus} />
           </button>
         </div>

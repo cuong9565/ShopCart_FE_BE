@@ -1,28 +1,38 @@
-import { useState } from 'react';
 import Navbar from './components/Navbar';
 import Carousel from './components/Carousel';
 import ProductList from './components/ProductList';
-import TestPage from './components/TestPage';
 import Footer from './components/Footer';
+import CartPage from './pages/CartPage';
+
+import TestPage from './components/TestPage';
+
+import { Routes, Route } from 'react-router-dom';
+
+function Home() {
+  return (
+    <>
+      <Carousel />
+      <ProductList />
+    </>
+  );
+}
 
 function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'test'>('home');
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar onNavigate={setCurrentView} currentView={currentView} />
-      <main className="w-full flex-grow">
-        {currentView === 'home' ? (
-          <>
-            <Carousel />
-            <ProductList />
-          </>
-        ) : (
-          <TestPage />
-        )}
-      </main>
-      <Footer />
-    </div>
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <Navbar />
+
+          <main className="w-full flex-grow">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/test" element={<TestPage />} />
+            </Routes>
+          </main>
+
+          <Footer />
+        </div>
   );
 }
 
