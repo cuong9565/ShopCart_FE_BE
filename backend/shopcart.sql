@@ -1,22 +1,13 @@
 CREATE SCHEMA "public";
-CREATE TABLE "address" (
-	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE "addresses" (
+	"id" uuid DEFAULT uuid_generate_v4(),
 	"user_id" uuid NOT NULL,
 	"address_line" text NOT NULL,
-	"city" varchar(100),
-	"district" varchar(100),
-	"ward" varchar(100),
-	"is_default" boolean
-);
-CREATE TABLE "addresses" (
-	"id" uuid PRIMARY KEY,
-	"detail" varchar(255) NOT NULL,
+	"city" varchar(255) NOT NULL,
 	"district" varchar(255) NOT NULL,
-	"full_name" varchar(255) NOT NULL,
-	"phone" varchar(255) NOT NULL,
-	"province" varchar(255) NOT NULL,
 	"ward" varchar(255) NOT NULL,
-	"user_id" uuid NOT NULL
+	"is_default" boolean DEFAULT false NOT NULL,
+	CONSTRAINT "address_pkey" PRIMARY KEY("id")
 );
 CREATE TABLE "cart_item" (
 	"user_id" uuid NOT NULL UNIQUE,
@@ -33,51 +24,47 @@ CREATE TABLE "category" (
 	"name" varchar(255) NOT NULL CONSTRAINT "category_name_key" UNIQUE,
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE "coupon" (
-	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-	"code" varchar(50) NOT NULL CONSTRAINT "coupon_code_unique" UNIQUE,
-	"discount_value" numeric(12, 2) NOT NULL,
-	"expiry_date" timestamp,
-	"min_order_value" numeric(12, 2),
-	"max_discount" numeric(12, 2)
-);
 CREATE TABLE "coupons" (
-	"id" uuid PRIMARY KEY,
-	"code" varchar(50) NOT NULL CONSTRAINT "ukeplt0kkm9yf2of2lnx6c1oy9b" UNIQUE,
-	"discount_type" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"code" varchar(50) NOT NULL CONSTRAINT "coupons_code_unique" UNIQUE,
 	"discount_value" numeric(19, 2) NOT NULL,
-	"expiry_date" timestamp NOT NULL,
+	"expiry_date" timestamp,
+	"min_order_value" numeric(19, 2) DEFAULT '0' NOT NULL,
 	"max_discount" numeric(19, 2),
-	"min_order_value" numeric(19, 2)
+	"discount_type" varchar(20) NOT NULL,
+	"start_date" timestamp,
+	"usage_per_user" integer DEFAULT 1 NOT NULL,
+	"status" varchar(20) DEFAULT 'ACTIVE' NOT NULL,
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+	"coupon_scope" varchar(255) NOT NULL,
+	CONSTRAINT "coupons_discount_type_check" CHECK (((discount_type)::text = ANY ((ARRAY['FIXED'::character varying, 'PERCENT'::character varying])::text[]))),
+	CONSTRAINT "coupons_scope_check" CHECK (((coupon_scope)::text = ANY ((ARRAY['ORDER'::character varying, 'SHIPPING'::character varying])::text[]))),
+	CONSTRAINT "coupons_status_check" CHECK (((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying])::text[])))
 );
 CREATE TABLE "inventory" (
 	"product_id" uuid PRIMARY KEY,
 	"quantity" integer NOT NULL
 );
-CREATE TABLE "order_coupon" (
+CREATE TABLE "order_coupons" (
 	"order_coupon_id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 	"order_id" uuid NOT NULL,
 	"coupon_id" uuid NOT NULL
 );
-CREATE TABLE "order_coupons" (
-	"id" uuid PRIMARY KEY,
-	"applied_amount" numeric(19, 2),
-	"coupon_id" uuid NOT NULL,
-	"order_id" uuid NOT NULL
-);
-CREATE TABLE "order_item" (
+CREATE TABLE "order_items" (
 	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 	"order_id" uuid NOT NULL,
 	"product_id" uuid NOT NULL,
 	"quantity" integer NOT NULL,
-	"price" numeric(12, 2) NOT NULL
+	"price" numeric(19, 2) NOT NULL
 );
-CREATE TABLE "order_items" (
-	"id" uuid PRIMARY KEY,
-	"price" numeric(19, 2) NOT NULL,
-	"product_id" uuid NOT NULL,
-	"quantity" integer NOT NULL,
-	"order_id" uuid NOT NULL
+CREATE TABLE "order_payments" (
+	"id" uuid DEFAULT uuid_generate_v4(),
+	"order_id" uuid NOT NULL CONSTRAINT "payments_order_id_unique" UNIQUE,
+	"method" integer NOT NULL,
+	"status" varchar(50) DEFAULT 'PENDING',
+	"paid_at" timestamp,
+	"payment_method_id" uuid,
+	CONSTRAINT "payments_pkey" PRIMARY KEY("id")
 );
 CREATE TABLE "orders" (
 	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -88,21 +75,15 @@ CREATE TABLE "orders" (
 	"shipping_fee" numeric(19, 2),
 	"final_price" numeric(19, 2) NOT NULL,
 	"status" varchar(50) DEFAULT 'PENDING',
-	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+	"shipping_method_id" uuid
 );
-CREATE TABLE "payment" (
+CREATE TABLE "payment_methods" (
 	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-	"order_id" uuid NOT NULL CONSTRAINT "payment_order_id_unique" UNIQUE,
-	"method" integer NOT NULL,
-	"status" varchar(255) DEFAULT 'PENDING',
-	"paid_at" timestamp
-);
-CREATE TABLE "payments" (
-	"id" uuid PRIMARY KEY,
-	"method" integer NOT NULL,
-	"paid_at" timestamp,
-	"status" varchar(50) NOT NULL,
-	"order_id" uuid NOT NULL CONSTRAINT "uk8vo36cen604as7etdfwmyjsxt" UNIQUE
+	"code" varchar(50) NOT NULL CONSTRAINT "payment_methods_code_key" UNIQUE,
+	"name" varchar(255) NOT NULL,
+	"is_active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE "product" (
 	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -123,6 +104,17 @@ CREATE TABLE "product_image" (
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
 	"is_thumbnail" boolean DEFAULT false
 );
+CREATE TABLE "shipping_methods" (
+	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+	"code" varchar(50) NOT NULL CONSTRAINT "shipping_methods_code_key" UNIQUE,
+	"name" varchar(255) NOT NULL,
+	"description" text,
+	"base_fee" numeric(19, 2) DEFAULT '0' NOT NULL,
+	"estimated_days_min" integer,
+	"estimated_days_max" integer,
+	"is_active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE "test" (
 	"id" bigint PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY (sequence name "test_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1),
 	"name" varchar(255)
@@ -135,8 +127,7 @@ CREATE TABLE "users" (
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
 	"full_name" varchar(255)
 );
-CREATE UNIQUE INDEX "address_pkey" ON "address" ("id");
-CREATE UNIQUE INDEX "addresses_pkey" ON "addresses" ("id");
+CREATE UNIQUE INDEX "address_pkey" ON "addresses" ("id");
 CREATE UNIQUE INDEX "cart_item_pkey" ON "cart_item" ("id");
 CREATE INDEX "cart_item_product_id_index" ON "cart_item" ("product_id");
 CREATE INDEX "cart_item_user_id_index" ON "cart_item" ("user_id");
@@ -144,48 +135,42 @@ CREATE UNIQUE INDEX "cart_item_user_product_unique" ON "cart_item" ("user_id","p
 CREATE UNIQUE INDEX "uk2dhdhp9i9ld88nv1bejg9hbx7" ON "cart_item" ("user_id","product_id");
 CREATE UNIQUE INDEX "category_name_key" ON "category" ("name");
 CREATE UNIQUE INDEX "category_pkey" ON "category" ("id");
-CREATE UNIQUE INDEX "coupon_code_unique" ON "coupon" ("code");
-CREATE UNIQUE INDEX "coupon_pkey" ON "coupon" ("id");
+CREATE UNIQUE INDEX "coupons_code_unique" ON "coupons" ("code");
 CREATE UNIQUE INDEX "coupons_pkey" ON "coupons" ("id");
-CREATE UNIQUE INDEX "ukeplt0kkm9yf2of2lnx6c1oy9b" ON "coupons" ("code");
 CREATE UNIQUE INDEX "inventory_pkey" ON "inventory" ("product_id");
-CREATE UNIQUE INDEX "order_coupon_pkey" ON "order_coupon" ("order_coupon_id");
-CREATE UNIQUE INDEX "order_coupons_pkey" ON "order_coupons" ("id");
-CREATE INDEX "order_item_order_id_index" ON "order_item" ("order_id");
-CREATE UNIQUE INDEX "order_item_pkey" ON "order_item" ("id");
-CREATE INDEX "order_item_product_id_index" ON "order_item" ("product_id");
+CREATE UNIQUE INDEX "order_coupons_pkey" ON "order_coupons" ("order_coupon_id");
+CREATE INDEX "order_items_order_id_index" ON "order_items" ("order_id");
 CREATE UNIQUE INDEX "order_items_pkey" ON "order_items" ("id");
+CREATE INDEX "order_items_product_id_index" ON "order_items" ("product_id");
+CREATE UNIQUE INDEX "payments_order_id_unique" ON "order_payments" ("order_id");
+CREATE UNIQUE INDEX "payments_pkey" ON "order_payments" ("id");
 CREATE UNIQUE INDEX "orders_pkey" ON "orders" ("id");
 CREATE INDEX "orders_status_index" ON "orders" ("status");
 CREATE INDEX "orders_user_id_index" ON "orders" ("user_id");
-CREATE UNIQUE INDEX "payment_order_id_unique" ON "payment" ("order_id");
-CREATE UNIQUE INDEX "payment_pkey" ON "payment" ("id");
-CREATE UNIQUE INDEX "payments_pkey" ON "payments" ("id");
-CREATE UNIQUE INDEX "uk8vo36cen604as7etdfwmyjsxt" ON "payments" ("order_id");
+CREATE UNIQUE INDEX "payment_methods_code_key" ON "payment_methods" ("code");
+CREATE UNIQUE INDEX "payment_methods_pkey" ON "payment_methods" ("id");
 CREATE INDEX "product_category_id_index" ON "product" ("category_id");
 CREATE UNIQUE INDEX "product_pkey" ON "product" ("id");
 CREATE UNIQUE INDEX "product_slug_key" ON "product" ("slug");
 CREATE UNIQUE INDEX "product_image_pkey" ON "product_image" ("id");
 CREATE INDEX "product_image_product_id_index" ON "product_image" ("product_id");
+CREATE UNIQUE INDEX "shipping_methods_code_key" ON "shipping_methods" ("code");
+CREATE UNIQUE INDEX "shipping_methods_pkey" ON "shipping_methods" ("id");
 CREATE UNIQUE INDEX "test_pkey" ON "test" ("id");
 CREATE UNIQUE INDEX "users_email_unique" ON "users" ("email");
 CREATE UNIQUE INDEX "users_pkey" ON "users" ("id");
-ALTER TABLE "address" ADD CONSTRAINT "address_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
-ALTER TABLE "addresses" ADD CONSTRAINT "fk1fa36y2oqhao3wgg2rw1pi459" FOREIGN KEY ("user_id") REFERENCES "users"("id");
+ALTER TABLE "addresses" ADD CONSTRAINT "address_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
 ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id") ON DELETE CASCADE;
 ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id");
-ALTER TABLE "order_coupon" ADD CONSTRAINT "order_coupon_coupon_id_foreign" FOREIGN KEY ("coupon_id") REFERENCES "coupon"("id");
-ALTER TABLE "order_coupon" ADD CONSTRAINT "order_coupon_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
-ALTER TABLE "order_coupons" ADD CONSTRAINT "fk1pjw8s41uwklokam64tfwarwq" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
-ALTER TABLE "order_coupons" ADD CONSTRAINT "fktvulisrqhoxrmtmml17pjoqa" FOREIGN KEY ("coupon_id") REFERENCES "coupons"("id");
-ALTER TABLE "order_item" ADD CONSTRAINT "order_item_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
-ALTER TABLE "order_item" ADD CONSTRAINT "order_item_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id");
-ALTER TABLE "order_items" ADD CONSTRAINT "fkbioxgbv59vetrxe0ejfubep1w" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
-ALTER TABLE "orders" ADD CONSTRAINT "fkhlglkvf5i60dv6dn397ethgpt" FOREIGN KEY ("address_id") REFERENCES "addresses"("id");
-ALTER TABLE "orders" ADD CONSTRAINT "orders_address_id_foreign" FOREIGN KEY ("address_id") REFERENCES "address"("id");
+ALTER TABLE "order_coupons" ADD CONSTRAINT "order_coupons_coupon_id_foreign" FOREIGN KEY ("coupon_id") REFERENCES "coupons"("id");
+ALTER TABLE "order_coupons" ADD CONSTRAINT "order_coupons_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
+ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
+ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id");
+ALTER TABLE "order_payments" ADD CONSTRAINT "payments_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
+ALTER TABLE "order_payments" ADD CONSTRAINT "payments_payment_method_foreign" FOREIGN KEY ("payment_method_id") REFERENCES "payment_methods"("id");
+ALTER TABLE "orders" ADD CONSTRAINT "orders_address_id_foreign" FOREIGN KEY ("address_id") REFERENCES "addresses"("id");
+ALTER TABLE "orders" ADD CONSTRAINT "orders_shipping_method_foreign" FOREIGN KEY ("shipping_method_id") REFERENCES "shipping_methods"("id");
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
-ALTER TABLE "payment" ADD CONSTRAINT "payment_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
-ALTER TABLE "payments" ADD CONSTRAINT "fk81gagumt0r8y3rmudcgpbk42l" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
 ALTER TABLE "product" ADD CONSTRAINT "product_category_id_foreign" FOREIGN KEY ("category_id") REFERENCES "category"("id");
 ALTER TABLE "product_image" ADD CONSTRAINT "product_image_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id") ON DELETE CASCADE;
