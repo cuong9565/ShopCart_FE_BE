@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import type { CartItem } from '../types'; // hoặc đúng đường dẫn file của bạn
+import type { CartItem } from '../types'; 
 
 
 const CartPage = () => {
