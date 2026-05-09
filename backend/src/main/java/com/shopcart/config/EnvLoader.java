@@ -51,7 +51,7 @@ public class EnvLoader {
         for(String key: keys){
             String value = dotenv.get(key);
             if(value == null || value.isBlank())
-                missing.append("\n").append(key);
+                missing.append("\n" + key);
         }
 
         // If exits missing key => throw IllegalStateException exception

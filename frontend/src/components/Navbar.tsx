@@ -1,38 +1,12 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShoppingCart, faUser, faFlask } from '@fortawesome/free-solid-svg-icons';
+import { faShoppingCart, faUser } from '@fortawesome/free-solid-svg-icons';
 
-interface NavbarProps {
-  onNavigate: (view: 'home' | 'test') => void;
-  currentView: 'home' | 'test';
-}
-
-const Navbar = ({ onNavigate, currentView }: NavbarProps) => {
+const Navbar = () => {
   return (
     <nav className="flex items-center justify-between px-6 py-4 bg-white shadow-md sticky top-0 z-50">
       {/* Left: Logo */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center">
         <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
-        <button
-          onClick={() => onNavigate('home')}
-          className={`px-3 py-1 rounded transition-colors ${
-            currentView === 'home' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-700 hover:text-blue-600'
-          }`}
-        >
-          Home
-        </button>
-        <button
-          onClick={() => onNavigate('test')}
-          className={`px-3 py-1 rounded transition-colors ${
-            currentView === 'test' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-700 hover:text-blue-600'
-          }`}
-        >
-          <FontAwesomeIcon icon={faFlask} className="mr-1" />
-          Test API
-        </button>
       </div>
 
       {/* Right: Icons */}
