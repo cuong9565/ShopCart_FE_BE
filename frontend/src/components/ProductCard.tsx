@@ -5,20 +5,14 @@ import axios from 'axios';
 import type { Product } from '../types';
 
 const ProductCard = ({ product }: { product: Product }) => {
-
-  // 👉 ADD TO CART
   const addToCart = async (productId: string) => {
     try {
       await axios.post(
         'http://localhost:8080/api/cart',
-        {
-          productId,
-          quantity: 1,
-        },
-        {
-          withCredentials: true, // session login
-        }
+        {  productId, quantity: 1},
+        {  withCredentials: true}
       );
+      window.dispatchEvent(new Event('cartUpdated'));
 
       alert('Đã thêm vào giỏ hàng!');
     } catch (error) {
