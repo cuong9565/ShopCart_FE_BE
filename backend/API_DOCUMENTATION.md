@@ -5,6 +5,7 @@
 2. [Category APIs](#category-apis)
 3. [Product APIs](#product-apis)
 4. [Cart APIs](#cart-apis)
+5. [Address APIs](#address-apis)
 
 ---
 
@@ -450,6 +451,112 @@ curl -X DELETE http://localhost:8080/api/cart \
 {
   "error": "Product not found in cart",
   "status": "NOT_FOUND"
+}
+```
+
+---
+
+## Address APIs
+
+### Overview
+Quản lý địa chỉ giao hàng của người dùng với các thao tác lấy danh sách và thêm địa chỉ. Yêu cầu authentication để truy cập.
+
+---
+
+## 1. Get User Addresses
+
+### Endpoint
+`GET /api/address`
+
+### Mục đích
+Lấy danh sách tất cả địa chỉ của người dùng đã đăng nhập
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/address \
+  -H "Cookie: JSESSIONID=ABC123..."
+```
+
+### Success Response (200 OK)
+```json
+[
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "addressLine": "123 Nguyễn Huệ, Phường Bến Thành",
+    "city": "Quận 1",
+    "district": "TP. Hồ Chí Minh",
+    "ward": "Bến Thành",
+    "isDefault": true,
+    "userId": "789e0123-f45g-67h8-i901-234567890123"
+  }
+]
+```
+
+---
+
+## 2. Add New Address
+
+### Endpoint
+`POST /api/address`
+
+### Mục đích
+Thêm địa chỉ mới cho người dùng đã đăng nhập
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Request Body
+```json
+{
+  "addressLine": "123 Nguyễn Huệ, Phường Bến Thành",
+  "city": "Quận 1",
+  "district": "TP. Hồ Chí Minh",
+  "ward": "Bến Thành"
+}
+```
+
+### Validation Rules
+- `addressLine`: Bắt buộc, tối đa 500 ký tự
+- `city`: Bắt buộc, tối đa 255 ký tự
+- `district`: Bắt buộc, tối đa 255 ký tự
+- `ward`: Bắt buộc, tối đa 255 ký tự
+
+### Endpoint Demo
+```bash
+curl -X POST http://localhost:8080/api/address \
+  -H "Content-Type: application/json" \
+  -H "Cookie: JSESSIONID=ABC123..." \
+  -d '{
+    "addressLine": "123 Nguyễn Huệ, Phường Bến Thành",
+    "city": "Quận 1",
+    "district": "TP. Hồ Chí Minh",
+    "ward": "Bến Thành"
+  }'
+```
+
+### Success Response (200 OK)
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "addressLine": "123 Nguyễn Huệ, Phường Bến Thành",
+  "city": "Quận 1",
+  "district": "TP. Hồ Chí Minh",
+  "ward": "Bến Thành",
+  "isDefault": false,
+  "userId": "789e0123-f45g-67h8-i901-234567890123"
+}
+```
+
+### Error Response (400 Bad Request)
+```json
+{
+  "addressLine": "Address line is required",
+  "city": "City is required",
+  "district": "District is required",
+  "ward": "Ward is required"
 }
 ```
 

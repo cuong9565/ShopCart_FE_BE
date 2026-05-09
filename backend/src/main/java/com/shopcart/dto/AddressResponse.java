@@ -1,22 +1,53 @@
 package com.shopcart.dto;
 
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.UUID;
 
+/**
+ * Data Transfer Object for Address responses
+ * Contains address information without exposing internal entity structure
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class AddressResponse {
+    /**
+     * Unique identifier for the address
+     */
     private UUID id;
-    private String fullName;
-    private String phone;
-    private String province;
+    
+    /**
+     * Full address line including street number and name
+     */
+    private String addressLine;
+    
+    /**
+     * City name
+     */
+    private String city;
+    
+    /**
+     * District/County name
+     */
     private String district;
+    
+    /**
+     * Ward/Commune name
+     */
     private String ward;
-    private String detail;
-    private UUID userId; // Trả về ID của user thay vì nguyên object User
+    
+    /**
+     * Flag indicating if this is the default address
+     */
+    private Boolean isDefault;
+    
+    /**
+     * ID of the user who owns this address
+     */
+    private UUID userId;
 }

@@ -1,59 +1,94 @@
 package com.shopcart.service;
 
-import com.shopcart.dto.AddressResponse;
-import com.shopcart.entity.Address;
-import com.shopcart.entity.User;
-import com.shopcart.repository.AddressRepository;
-import com.shopcart.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.shopcart.dto.AddAddressRequest;
+import com.shopcart.dto.AddressResponse;
+import com.shopcart.entity.Address;
+import com.shopcart.repository.AddressRepository;
+import com.shopcart.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Service implementation for Address operations
+ * Handles business logic for address management
+ */
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AddressServiceImpl implements AddressService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
 
+    /**
+     * {@inheritDoc}
+     * Creates a new address for the specified user after validating user existence
+     */
     @Override
-    public AddressResponse createAddress(UUID userId, Address address) {
-        // Tìm user theo ID, nếu không có thì báo lỗi
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + userId));
+    public AddressResponse createAddress(UUID userId, AddAddressRequest addAddressRequest) {
+        // Validate user exists
+        userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-        // Thiết lập mối quan hệ
-        address.setUser(user);
+        // Create Address entity from request
+        Address address = new Address();
+        address.setUserId(userId);
+        address.setAddressLine(addAddressRequest.getAddressLine());
+        address.setCity(addAddressRequest.getCity());
+        address.setDistrict(addAddressRequest.getDistrict());
+        address.setWard(addAddressRequest.getWard());
+        
+        // Handle default address logic
+        List<Address> existingAddresses = addressRepository.findByUserId(userId);
+        if (existingAddresses.isEmpty()) {
+            // First address - always set as default
+            address.setIsDefault(true);
+        } else {
+            // Not specified as default - set to false
+            address.setIsDefault(false);
+        }
+        
         Address saved = addressRepository.save(address);
 
         return AddressResponse.builder()
                 .id(saved.getId())
-                .fullName(saved.getFullName())
-                .phone(saved.getPhone())
-                .province(saved.getProvince())
+                .addressLine(saved.getAddressLine())
+                .city(saved.getCity())
                 .district(saved.getDistrict())
                 .ward(saved.getWard())
-                .detail(saved.getDetail())
-                .userId(user.getId())
+                .isDefault(saved.getIsDefault())
+                .userId(saved.getUserId())
                 .build();
     }
 
+    /**
+     * {@inheritDoc}
+     * Retrieves all addresses belonging to a specific user
+     */
     @Override
-public List<AddressResponse> getAllAddresses() {
-    return addressRepository.findAll().stream()
-            .map(address -> AddressResponse.builder()
-                    .id(address.getId())
-                    .fullName(address.getFullName())
-                    .phone(address.getPhone())
-                    .province(address.getProvince())
-                    .district(address.getDistrict())
-                    .ward(address.getWard())
-                    .detail(address.getDetail())
-                    .userId(address.getUser() != null ? address.getUser().getId() : null)
-                    .build())
-            .collect(Collectors.toList());
-}
+    @Transactional(readOnly = true)
+    public List<AddressResponse> getAddressesByUserId(UUID userId) {
+        // Validate user exists
+        userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        return addressRepository.findByUserId(userId).stream()
+                .map(address -> AddressResponse.builder()
+                        .id(address.getId())
+                        .addressLine(address.getAddressLine())
+                        .city(address.getCity())
+                        .district(address.getDistrict())
+                        .ward(address.getWard())
+                        .isDefault(address.getIsDefault())
+                        .userId(address.getUserId())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
