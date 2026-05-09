@@ -562,6 +562,85 @@ curl -X POST http://localhost:8080/api/address \
 
 ---
 
+## 3. Update Address
+
+### Endpoint
+`PUT /api/address/{addressId}`
+
+### Mục đích
+Cập nhật thông tin địa chỉ hiện tại của người dùng đã đăng nhập
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Path Parameters
+- `addressId`: ID của địa chỉ cần cập nhật
+
+### Request Body
+```json
+{
+  "addressLine": "456 Nguyễn Văn Linh, Phường Bình Thọ",
+  "city": "Quận 7",
+  "district": "TP. Hồ Chí Minh",
+  "ward": "Bình Thọ",
+  "isDefault": true
+}
+```
+
+### Validation Rules
+- `addressLine`: Bắt buộc, tối đa 500 ký tự
+- `city`: Bắt buộc, tối đa 255 ký tự
+- `district`: Bắt buộc, tối đa 255 ký tự
+- `ward`: Bắt buộc, tối đa 255 ký tự
+- `isDefault`: Không bắt buộc, boolean
+
+### Endpoint Demo
+```bash
+curl -X PUT http://localhost:8080/api/address/123e4567-e89b-12d3-a456-426614174000 \
+  -H "Content-Type: application/json" \
+  -H "Cookie: JSESSIONID=ABC123..." \
+  -d '{
+    "addressLine": "456 Nguyễn Văn Linh, Phường Bình Thọ",
+    "city": "Quận 7",
+    "district": "TP. Hồ Chí Minh",
+    "ward": "Bình Thọ",
+    "isDefault": true
+  }'
+```
+
+### Success Response (200 OK)
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "addressLine": "456 Nguyễn Văn Linh, Phường Bình Thọ",
+  "city": "Quận 7",
+  "district": "TP. Hồ Chí Minh",
+  "ward": "Bình Thọ",
+  "isDefault": true,
+  "userId": "789e0123-f45g-67h8-i901-234567890123"
+}
+```
+
+### Error Response (404 Not Found)
+```json
+{
+  "error": "Address not found or does not belong to user",
+  "status": "NOT_FOUND"
+}
+```
+
+### Error Response (400 Bad Request)
+```json
+{
+  "addressLine": "Address line is required",
+  "city": "City is required",
+  "district": "District is required",
+  "ward": "Ward is required"
+}
+```
+
+---
+
 ## Error Handling
 
 ### Common HTTP Status Codes

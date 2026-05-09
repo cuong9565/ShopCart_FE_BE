@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.shopcart.dto.AddAddressRequest;
 import com.shopcart.dto.AddressResponse;
+import com.shopcart.dto.UpdateAddressRequest;
 import com.shopcart.entity.Address;
 import com.shopcart.repository.AddressRepository;
 import com.shopcart.repository.UserRepository;
@@ -90,5 +91,39 @@ public class AddressServiceImpl implements AddressService {
                         .userId(address.getUserId())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * {@inheritDoc}
+     * Updates an existing address for the specified user
+     */
+    @Override
+    public AddressResponse updateAddress(UUID userId, UUID addressId, UpdateAddressRequest updateAddressRequest) {
+        // Validate user exists
+        userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        // Find and validate address belongs to user
+        Address address = addressRepository.findByIdAndUserId(addressId, userId)
+                .orElseThrow(() -> new RuntimeException("Address not found or does not belong to user"));
+
+        // Update address fields
+        address.setAddressLine(updateAddressRequest.getAddressLine());
+        address.setCity(updateAddressRequest.getCity());
+        address.setDistrict(updateAddressRequest.getDistrict());
+        address.setWard(updateAddressRequest.getWard());
+
+        // Save the updated address
+        Address saved = addressRepository.save(address);
+
+        return AddressResponse.builder()
+                .id(saved.getId())
+                .addressLine(saved.getAddressLine())
+                .city(saved.getCity())
+                .district(saved.getDistrict())
+                .ward(saved.getWard())
+                .isDefault(saved.getIsDefault())
+                .userId(saved.getUserId())
+                .build();
     }
 }
