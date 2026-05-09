@@ -1,19 +1,59 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
+import axios from 'axios';
+import type { CartItem } from '../types'; // hoặc đúng đường dẫn file của bạn
+
 
 const CartPage = () => {
-  const {
-    cart,
-    increase,
-    decrease,
-    removeItem,
-  } = useCart();
+  const [cart, setCart] = useState<CartItem[]>([]);
 
+  // 1. LOAD CART
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  const fetchCart = async () => {
+    try {
+      const res = await axios.get('http://localhost:8080/api/cart', {
+        withCredentials: true,
+      });
+
+      setCart(res.data);
+    } catch (error) {
+      console.log('Lỗi load cart:', error);
+    }
+  };
+
+  // 2. UPDATE QUANTITY
+  const updateQuantity = async (productId: string, quantity: number) => {
+    if (quantity < 1) return;
+
+    await axios.put(
+      'http://localhost:8080/api/cart',
+      { productId, quantity },
+      { withCredentials: true }
+    );
+
+    fetchCart();
+  };
+
+  // 3. REMOVE ITEM
+  const removeItem = async (productId: string) => {
+    await axios.delete('http://localhost:8080/api/cart', {
+      data: { productId },
+      withCredentials: true,
+    });
+
+    fetchCart();
+  };
+
+  // 4. TOTAL
   const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + item.subtotal,
     0
   );
 
+  // 5. EMPTY CART UI
   if (cart.length === 0) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-16 text-center">
@@ -33,6 +73,7 @@ const CartPage = () => {
     );
   }
 
+  // 6. MAIN UI
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       <h1 className="text-3xl font-bold mb-8">
@@ -40,31 +81,39 @@ const CartPage = () => {
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Danh sách sản phẩm */}
+
+        {/* LEFT: CART ITEMS */}
         <div className="lg:col-span-2 space-y-4">
           {cart.map((item) => (
             <div
-              key={item.id}
+              key={item.productId}
               className="bg-white rounded-xl shadow-sm p-4 flex gap-4"
             >
+              {/* IMAGE */}
               <img
-                src={item.image}
-                alt={item.name}
+                src={item.thumbnailImage}
                 className="w-28 h-28 object-cover rounded-lg"
               />
 
+              {/* INFO */}
               <div className="flex-1">
                 <h2 className="font-semibold text-lg">
-                  {item.name}
+                  {item.productName}
                 </h2>
 
                 <p className="text-red-500 font-bold mt-2">
-                  {item.price.toLocaleString('vi-VN')}₫
+                  {item.productPrice.toLocaleString('vi-VN')}₫
                 </p>
 
+                {/* QUANTITY */}
                 <div className="flex items-center gap-3 mt-4">
                   <button
-                    onClick={() => decrease(item.id)}
+                    onClick={() =>
+                      updateQuantity(
+                        item.productId,
+                        item.quantity - 1
+                      )
+                    }
                     className="w-8 h-8 border rounded"
                   >
                     -
@@ -73,7 +122,12 @@ const CartPage = () => {
                   <span>{item.quantity}</span>
 
                   <button
-                    onClick={() => increase(item.id)}
+                    onClick={() =>
+                      updateQuantity(
+                        item.productId,
+                        item.quantity + 1
+                      )
+                    }
                     className="w-8 h-8 border rounded"
                   >
                     +
@@ -81,8 +135,9 @@ const CartPage = () => {
                 </div>
               </div>
 
+              {/* DELETE */}
               <button
-                onClick={() => removeItem(item.id)}
+                onClick={() => removeItem(item.productId)}
                 className="text-red-500 font-medium"
               >
                 Xóa
@@ -91,7 +146,7 @@ const CartPage = () => {
           ))}
         </div>
 
-        {/* Tổng tiền */}
+        {/* RIGHT: SUMMARY */}
         <div className="bg-white rounded-xl shadow-sm p-6 h-fit">
           <h2 className="text-2xl font-bold mb-6">
             Tóm tắt đơn hàng
@@ -109,6 +164,7 @@ const CartPage = () => {
             Thanh toán
           </button>
         </div>
+
       </div>
     </div>
   );
