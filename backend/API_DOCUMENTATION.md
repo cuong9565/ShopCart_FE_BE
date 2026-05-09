@@ -4,6 +4,7 @@
 1. [Authentication APIs](#authentication-apis)
 2. [Category APIs](#category-apis)
 3. [Product APIs](#product-apis)
+4. [Cart APIs](#cart-apis)
 
 ---
 
@@ -253,6 +254,202 @@ curl -X GET http://localhost:8080/api/products/detail/4569823e-8674-477d-9f02-ce
         "https://htfpdyvdrsjztkuopkmf.supabase.co/storage/v1/object/public/product-images/products/4569823e-8674-477d-9f02-ce0ddb60dcb1/6.webp",
         "https://htfpdyvdrsjztkuopkmf.supabase.co/storage/v1/object/public/product-images/products/4569823e-8674-477d-9f02-ce0ddb60dcb1/7.webp"
     ]
+}
+```
+
+---
+
+## Cart APIs
+
+### Overview
+Quản lý giỏ hàng người dùng với các thao tác thêm, cập nhật, và xóa sản phẩm. Yêu cầu authentication để truy cập.
+
+---
+
+## 1. Get Cart Items
+
+### Endpoint
+`GET /api/cart`
+
+### Mục đích
+Lấy danh sách tất cả sản phẩm trong giỏ hàng của người dùng đã đăng nhập
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/cart \
+  -H "Cookie: JSESSIONID=ABC123..."
+```
+
+### Success Response (200 OK)
+```json
+[
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "productId": "456e7890-f12c-34d5-b789-012345678901",
+    "productName": "iPhone 15 Pro",
+    "productPrice": 999.99,
+    "thumbnailImage": "https://example.com/iphone-thumb.jpg",
+    "quantity": 2,
+    "subtotal": 1999.98,
+    "productStatus": "ACTIVE",
+    "productSlug": "iphone-15-pro",
+    "createdAt": "2026-05-09T10:30:00"
+  }
+]
+```
+
+---
+
+## 2. Add Product to Cart
+
+### Endpoint
+`POST /api/cart`
+
+### Mục đích
+Thêm sản phẩm vào giỏ hàng. Nếu sản phẩm đã tồn tại, số lượng sẽ được tăng lên.
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Request Body
+```json
+{
+  "productId": "456e7890-f12c-34d5-b789-012345678901",
+  "quantity": 1
+}
+```
+
+### Validation Rules
+- `productId`: Bắt buộc, phải là UUID hợp lệ
+- `quantity`: Bắt buộc, phải >= 1
+
+### Endpoint Demo
+```bash
+curl -X POST http://localhost:8080/api/cart \
+  -H "Content-Type: application/json" \
+  -H "Cookie: JSESSIONID=ABC123..." \
+  -d '{
+    "productId": "456e7890-f12c-34d5-b789-012345678901",
+    "quantity": 1
+  }'
+```
+
+### Success Response (200 OK)
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "productId": "456e7890-f12c-34d5-b789-012345678901",
+  "productName": "iPhone 15 Pro",
+  "productPrice": 999.99,
+  "thumbnailImage": "https://example.com/iphone-thumb.jpg",
+  "quantity": 1,
+  "subtotal": 999.99,
+  "productStatus": "ACTIVE",
+  "productSlug": "iphone-15-pro",
+  "createdAt": "2026-05-09T10:30:00"
+}
+```
+
+---
+
+## 3. Update Cart Item Quantity
+
+### Endpoint
+`PUT /api/cart`
+
+### Mục đích
+Cập nhật số lượng của sản phẩm trong giỏ hàng
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Request Body
+```json
+{
+  "productId": "456e7890-f12c-34d5-b789-012345678901",
+  "quantity": 3
+}
+```
+
+### Validation Rules
+- `productId`: Bắt buộc, phải là UUID hợp lệ
+- `quantity`: Bắt buộc, phải >= 1
+
+### Endpoint Demo
+```bash
+curl -X PUT http://localhost:8080/api/cart \
+  -H "Content-Type: application/json" \
+  -H "Cookie: JSESSIONID=ABC123..." \
+  -d '{
+    "productId": "456e7890-f12c-34d5-b789-012345678901",
+    "quantity": 3
+  }'
+```
+
+### Success Response (200 OK)
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "productId": "456e7890-f12c-34d5-b789-012345678901",
+  "productName": "iPhone 15 Pro",
+  "productPrice": 999.99,
+  "thumbnailImage": "https://example.com/iphone-thumb.jpg",
+  "quantity": 3,
+  "subtotal": 2999.97,
+  "productStatus": "ACTIVE",
+  "productSlug": "iphone-15-pro",
+  "createdAt": "2026-05-09T10:30:00"
+}
+```
+
+---
+
+## 4. Remove Product from Cart
+
+### Endpoint
+`DELETE /api/cart`
+
+### Mục đích
+Xóa sản phẩm khỏi giỏ hàng
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Request Body
+```json
+{
+  "productId": "456e7890-f12c-34d5-b789-012345678901"
+}
+```
+
+### Validation Rules
+- `productId`: Bắt buộc, phải là UUID hợp lệ
+
+### Endpoint Demo
+```bash
+curl -X DELETE http://localhost:8080/api/cart \
+  -H "Content-Type: application/json" \
+  -H "Cookie: JSESSIONID=ABC123..." \
+  -d '{
+    "productId": "456e7890-f12c-34d5-b789-012345678901"
+  }'
+```
+
+### Success Response (200 OK)
+```json
+{
+  "message": "Product removed from cart successfully"
+}
+```
+
+### Error Response (404 Not Found)
+```json
+{
+  "error": "Product not found in cart",
+  "status": "NOT_FOUND"
 }
 ```
 
