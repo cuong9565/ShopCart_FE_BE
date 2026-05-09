@@ -13,9 +13,11 @@ import com.shopcart.dto.UpdateCartRequest;
 import com.shopcart.entity.CartItem;
 import com.shopcart.entity.Inventory;
 import com.shopcart.entity.Product;
+import com.shopcart.entity.ProductImage;
 import com.shopcart.entity.User;
 import com.shopcart.repository.CartItemRepository;
 import com.shopcart.repository.InventoryRepository;
+import com.shopcart.repository.ProductImageRepository;
 import com.shopcart.repository.ProductRepository;
 import com.shopcart.repository.UserRepository;
 
@@ -37,9 +39,10 @@ import lombok.RequiredArgsConstructor;
 public class CartServiceImpl implements CartService {
     
     private final CartItemRepository cartItemRepository;
-    private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
+    private final ProductImageRepository productImageRepository;
     
     @Override
     @Transactional(readOnly = true)
@@ -180,6 +183,13 @@ public class CartServiceImpl implements CartService {
         dto.setProductId(cartItem.getProduct().getId());
         dto.setProductName(cartItem.getProduct().getName());
         dto.setProductPrice(cartItem.getProduct().getPrice());
+        
+        // Get thumbnail image for the product
+        ProductImage thumbnailImage = productImageRepository.findThumbnailByProductId(cartItem.getProduct().getId());
+        if (thumbnailImage != null) {
+            dto.setThumbnailImage(thumbnailImage.getImageUrl());
+        }
+        
         dto.setQuantity(cartItem.getQuantity());
         dto.setSubtotal(dto.calculateSubtotal());
         dto.setProductStatus(cartItem.getProduct().getStatus());

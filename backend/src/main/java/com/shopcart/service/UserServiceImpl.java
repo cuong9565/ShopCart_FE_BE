@@ -1,15 +1,16 @@
 package com.shopcart.service;
 
-import com.shopcart.dto.UserResponse;
-import com.shopcart.entity.User;
-import com.shopcart.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-
-import org.jspecify.annotations.Nullable;
-import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.shopcart.dto.UserResponse;
+import com.shopcart.entity.User;
+import com.shopcart.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

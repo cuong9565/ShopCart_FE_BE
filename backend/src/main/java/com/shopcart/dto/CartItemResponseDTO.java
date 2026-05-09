@@ -16,6 +16,7 @@ import lombok.Data;
  * <ul>
  *   <li>Cart item identification and timestamps</li>
  *   <li>Product information (name, price, description)</li>
+ *   <li>Product thumbnail image</li>
  *   <li>Quantity and calculated subtotal</li>
  *   <li>Product status and availability</li>
  * </ul>
@@ -43,17 +44,22 @@ public class CartItemResponseDTO {
     private String productName;
     
     /**
-     * Unit price of the product.
+     * Price of the product.
      */
     private BigDecimal productPrice;
     
     /**
-     * Quantity of the product in the cart.
+     * Thumbnail image URL of the product.
+     */
+    private String thumbnailImage;
+    
+    /**
+     * Quantity of the product in cart.
      */
     private Integer quantity;
     
     /**
-     * Calculated subtotal (price × quantity).
+     * Calculated subtotal (price * quantity).
      */
     private BigDecimal subtotal;
     
@@ -63,12 +69,12 @@ public class CartItemResponseDTO {
     private String productStatus;
     
     /**
-     * SEO-friendly slug for the product.
+     * URL-friendly slug for the product.
      */
     private String productSlug;
     
     /**
-     * Timestamp when the cart item was created.
+     * Creation timestamp of the cart item.
      */
     private LocalDateTime createdAt;
     
