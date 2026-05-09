@@ -6,7 +6,7 @@ import {
 } from "react";
 
 export interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
@@ -19,11 +19,11 @@ interface CartContextType {
 
   addToCart: (product: Omit<CartItem, "quantity">) => void;
 
-  increase: (id: number) => void;
+  increase: (id: string) => void;
 
-  decrease: (id: number) => void;
+  decrease: (id: string) => void;
 
-  removeItem: (id: number) => void;
+  removeItem: (id: string) => void;
 
   clearCart: () => void;
 }
@@ -65,7 +65,7 @@ export const CartProvider = ({
   };
 
   // TĂNG SỐ LƯỢNG
-  const increase = (id: number) => {
+  const increase = (id: string) => {
     setCart((prev) =>
       prev.map((item) =>
         item.id === id && item.quantity < item.stock
@@ -76,7 +76,7 @@ export const CartProvider = ({
   };
 
   // GIẢM SỐ LƯỢNG
-  const decrease = (id: number) => {
+  const decrease = (id: string) => {
     setCart((prev) =>
       prev.map((item) =>
         item.id === id && item.quantity > 1
@@ -87,7 +87,7 @@ export const CartProvider = ({
   };
 
   // XOÁ ITEM
-  const removeItem = (id: number) => {
+  const removeItem = (id: string) => {
     setCart((prev) =>
       prev.filter((item) => item.id !== id)
     );

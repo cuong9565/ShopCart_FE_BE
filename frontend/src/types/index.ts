@@ -23,3 +23,12 @@ export interface User {
   email: string;
   userId: string;
 }
+
+export interface CartItem {
+  productId: string;
+  productName: string;
+  productPrice: number;
+  thumbnailImage: string;
+  quantity: number;
+  subtotal: number;
+}
