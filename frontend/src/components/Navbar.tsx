@@ -39,12 +39,16 @@ const Navbar = () => {
       <div className="flex items-center space-x-6">
         {user ? (
           <>
-            <button className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer relative mr-6">
+            <Link
+              to="/cart"
+              className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer relative mr-6"
+            >
               <FontAwesomeIcon icon={faShoppingCart} size="lg" />
+
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 0
               </span>
-            </button>
+            </Link>
 
             <div className="relative" ref={dropdownRef}>
               <button
