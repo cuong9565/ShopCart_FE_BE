@@ -106,10 +106,10 @@ CREATE TABLE "product_image" (
 );
 CREATE TABLE "shipping_methods" (
 	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-	"code" varchar(50) NOT NULL CONSTRAINT "shipping_methods_code_key" UNIQUE,
+	"code" varchar(255) NOT NULL CONSTRAINT "shipping_methods_code_key" UNIQUE,
 	"name" varchar(255) NOT NULL,
 	"description" text,
-	"base_fee" numeric(19, 2) DEFAULT '0' NOT NULL,
+	"base_fee" numeric(19, 3) DEFAULT '0' NOT NULL,
 	"estimated_days_min" integer,
 	"estimated_days_max" integer,
 	"is_active" boolean DEFAULT true,

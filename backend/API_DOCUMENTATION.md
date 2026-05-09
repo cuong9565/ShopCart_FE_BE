@@ -6,6 +6,8 @@
 3. [Product APIs](#product-apis)
 4. [Cart APIs](#cart-apis)
 5. [Address APIs](#address-apis)
+6. [Shipping Methods APIs](#shipping-methods-apis)
+7. [Payment Methods APIs](#payment-methods-apis)
 
 ---
 
@@ -636,6 +638,195 @@ curl -X PUT http://localhost:8080/api/address/123e4567-e89b-12d3-a456-4266141740
   "city": "City is required",
   "district": "District is required",
   "ward": "Ward is required"
+}
+```
+
+---
+
+## Shipping Methods APIs
+
+### Overview
+Quản lý phương thức vận chuyển với các thao tác lấy danh sách và chi tiết phương thức vận chuyển. Không yêu cầu authentication để truy cập.
+
+---
+
+## 1. Get All Active Shipping Methods
+
+### Endpoint
+`GET /api/shipping-methods`
+
+### Mục đích
+Lấy danh sách tất cả phương thức vận chuyển đang hoạt động
+
+### Authentication
+Không yêu cầu authentication
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/shipping-methods
+```
+
+### Success Response (200 OK)
+```json
+[
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "code": "STANDARD",
+    "name": "Giao hàng tiêu chuẩn",
+    "description": "Giao hàng trong 3-5 ngày làm việc",
+    "baseFee": 25000.000,
+    "estimatedDaysMin": 3,
+    "estimatedDaysMax": 5,
+    "isActive": true,
+    "createdAt": "2026-05-09T10:30:00"
+  },
+  {
+    "id": "456e7890-f12c-34d5-b789-012345678901",
+    "code": "EXPRESS",
+    "name": "Giao hàng nhanh",
+    "description": "Giao hàng trong 1-2 ngày làm việc",
+    "baseFee": 50000.000,
+    "estimatedDaysMin": 1,
+    "estimatedDaysMax": 2,
+    "isActive": true,
+    "createdAt": "2026-05-09T10:30:00"
+  }
+]
+```
+
+---
+
+## 2. Get Shipping Method by ID
+
+### Endpoint
+`GET /api/shipping-methods/{id}`
+
+### Mục đích
+Lấy thông tin chi tiết của một phương thức vận chuyển theo ID
+
+### Authentication
+Không yêu cầu authentication
+
+### Path Parameters
+- `id`: ID của phương thức vận chuyển
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/shipping-methods/123e4567-e89b-12d3-a456-426614174000
+```
+
+### Success Response (200 OK)
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "code": "STANDARD",
+  "name": "Giao hàng tiêu chuẩn",
+  "description": "Giao hàng trong 3-5 ngày làm việc",
+  "baseFee": 25000.000,
+  "estimatedDaysMin": 3,
+  "estimatedDaysMax": 5,
+  "isActive": true,
+  "createdAt": "2026-05-09T10:30:00"
+}
+```
+
+### Error Response (404 Not Found)
+```json
+{
+  "error": "Shipping method not found with ID: 123e4567-e89b-12d3-a456-426614174000",
+  "status": "NOT_FOUND"
+}
+```
+
+---
+
+## Payment Methods APIs
+
+### Overview
+Quản lý phương thức thanh toán với các thao tác lấy danh sách và chi tiết phương thức thanh toán. Không yêu cầu authentication để truy cập.
+
+---
+
+## 1. Get All Active Payment Methods
+
+### Endpoint
+`GET /api/payment-methods`
+
+### Mục đích
+Lấy danh sách tất cả phương thức thanh toán đang hoạt động
+
+### Authentication
+Không yêu cầu authentication
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/payment-methods
+```
+
+### Success Response (200 OK)
+```json
+[
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "code": "CASH_ON_DELIVERY",
+    "name": "Thanh toán khi nhận hàng (COD)",
+    "isActive": true,
+    "createdAt": "2026-05-09T10:30:00"
+  },
+  {
+    "id": "456e7890-f12c-34d5-b789-012345678901",
+    "code": "BANK_TRANSFER",
+    "name": "Chuyển khoản ngân hàng",
+    "isActive": true,
+    "createdAt": "2026-05-09T10:30:00"
+  },
+  {
+    "id": "789e0123-f45g-67h8-i901-234567890123",
+    "code": "CREDIT_CARD",
+    "name": "Thẻ tín dụng/Ghi nợ",
+    "isActive": true,
+    "createdAt": "2026-05-09T10:30:00"
+  }
+]
+```
+
+---
+
+## 2. Get Payment Method by ID
+
+### Endpoint
+`GET /api/payment-methods/{id}`
+
+### Mục đích
+Lấy thông tin chi tiết của một phương thức thanh toán theo ID
+
+### Authentication
+Không yêu cầu authentication
+
+### Path Parameters
+- `id`: ID của phương thức thanh toán
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/payment-methods/123e4567-e89b-12d3-a456-426614174000
+```
+
+### Success Response (200 OK)
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "code": "CASH_ON_DELIVERY",
+  "name": "Thanh toán khi nhận hàng (COD)",
+  "isActive": true,
+  "createdAt": "2026-05-09T10:30:00"
+}
+```
+
+### Error Response (404 Not Found)
+```json
+{
+  "error": "Payment method not found with ID: 123e4567-e89b-12d3-a456-426614174000",
+  "status": "NOT_FOUND"
 }
 ```
 
