@@ -1,22 +1,13 @@
 CREATE SCHEMA "public";
-CREATE TABLE "address" (
-	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE "addresses" (
+	"id" uuid DEFAULT uuid_generate_v4(),
 	"user_id" uuid NOT NULL,
 	"address_line" text NOT NULL,
-	"city" varchar(100),
-	"district" varchar(100),
-	"ward" varchar(100),
-	"is_default" boolean
-);
-CREATE TABLE "addresses" (
-	"id" uuid PRIMARY KEY,
-	"detail" varchar(255) NOT NULL,
+	"city" varchar(255) NOT NULL,
 	"district" varchar(255) NOT NULL,
-	"full_name" varchar(255) NOT NULL,
-	"phone" varchar(255) NOT NULL,
-	"province" varchar(255) NOT NULL,
 	"ward" varchar(255) NOT NULL,
-	"user_id" uuid NOT NULL
+	"is_default" boolean DEFAULT false NOT NULL,
+	CONSTRAINT "address_pkey" PRIMARY KEY("id")
 );
 CREATE TABLE "cart_item" (
 	"user_id" uuid NOT NULL UNIQUE,
@@ -135,8 +126,7 @@ CREATE TABLE "users" (
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
 	"full_name" varchar(255)
 );
-CREATE UNIQUE INDEX "address_pkey" ON "address" ("id");
-CREATE UNIQUE INDEX "addresses_pkey" ON "addresses" ("id");
+CREATE UNIQUE INDEX "address_pkey" ON "addresses" ("id");
 CREATE UNIQUE INDEX "cart_item_pkey" ON "cart_item" ("id");
 CREATE INDEX "cart_item_product_id_index" ON "cart_item" ("product_id");
 CREATE INDEX "cart_item_user_id_index" ON "cart_item" ("user_id");
@@ -170,8 +160,7 @@ CREATE INDEX "product_image_product_id_index" ON "product_image" ("product_id");
 CREATE UNIQUE INDEX "test_pkey" ON "test" ("id");
 CREATE UNIQUE INDEX "users_email_unique" ON "users" ("email");
 CREATE UNIQUE INDEX "users_pkey" ON "users" ("id");
-ALTER TABLE "address" ADD CONSTRAINT "address_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
-ALTER TABLE "addresses" ADD CONSTRAINT "fk1fa36y2oqhao3wgg2rw1pi459" FOREIGN KEY ("user_id") REFERENCES "users"("id");
+ALTER TABLE "addresses" ADD CONSTRAINT "address_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
 ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id") ON DELETE CASCADE;
 ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id");
@@ -182,8 +171,7 @@ ALTER TABLE "order_coupons" ADD CONSTRAINT "fktvulisrqhoxrmtmml17pjoqa" FOREIGN 
 ALTER TABLE "order_item" ADD CONSTRAINT "order_item_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
 ALTER TABLE "order_item" ADD CONSTRAINT "order_item_product_id_foreign" FOREIGN KEY ("product_id") REFERENCES "product"("id");
 ALTER TABLE "order_items" ADD CONSTRAINT "fkbioxgbv59vetrxe0ejfubep1w" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
-ALTER TABLE "orders" ADD CONSTRAINT "fkhlglkvf5i60dv6dn397ethgpt" FOREIGN KEY ("address_id") REFERENCES "addresses"("id");
-ALTER TABLE "orders" ADD CONSTRAINT "orders_address_id_foreign" FOREIGN KEY ("address_id") REFERENCES "address"("id");
+ALTER TABLE "orders" ADD CONSTRAINT "orders_address_id_foreign" FOREIGN KEY ("address_id") REFERENCES "addresses"("id");
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_foreign" FOREIGN KEY ("user_id") REFERENCES "users"("id");
 ALTER TABLE "payment" ADD CONSTRAINT "payment_order_id_foreign" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
 ALTER TABLE "payments" ADD CONSTRAINT "fk81gagumt0r8y3rmudcgpbk42l" FOREIGN KEY ("order_id") REFERENCES "orders"("id");
