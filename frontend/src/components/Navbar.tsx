@@ -4,11 +4,38 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 
+import axios from 'axios';
+
 const Navbar = () => {
   const { user, setShowLoginModal, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const fetchCartCount = async () => {
+    try {
+      const res = await axios.get('http://localhost:8080/api/cart', {
+        withCredentials: true,
+      });
+
+      const total = res.data.reduce(
+        (sum: number, item: any) => sum + item.quantity,
+        0
+      );
+
+      setCartCount(total);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchCartCount();
+    }
+  }, [user]);
+
+  
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,11 +70,15 @@ const Navbar = () => {
               to="/cart"
               className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer relative mr-6"
             >
-              <FontAwesomeIcon icon={faShoppingCart} size="lg" />
+              <div className="relative">
+                <FontAwesomeIcon icon={faShoppingCart} size="lg" />
 
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                0
-              </span>
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </div>           
             </Link>
 
             <div className="relative" ref={dropdownRef}>
