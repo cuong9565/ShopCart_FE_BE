@@ -5,6 +5,8 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import Footer from './components/Footer';
 import LoginModal from './components/LoginModal';
 
+import CartPage from './pages/CartPage';
+
 function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -12,6 +14,7 @@ function App() {
       <main className="w-full flex-grow">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/product/:slug/:id" element={<ProductDetailPage />} />
         </Routes>
       </main>

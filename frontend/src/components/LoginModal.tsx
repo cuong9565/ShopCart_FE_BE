@@ -111,6 +111,7 @@ const LoginModal: React.FC = () => {
                 <FontAwesomeIcon icon={faEnvelope} />
               </span>
               <input
+                data-testid="email-input"
                 type="email"
                 placeholder="ten@example.com"
                 value={email}
@@ -134,6 +135,7 @@ const LoginModal: React.FC = () => {
                 <FontAwesomeIcon icon={faLock} />
               </span>
               <input
+                data-testid="password-input"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -152,6 +154,7 @@ const LoginModal: React.FC = () => {
           {/* Action button */}
           <button
             type="submit"
+            data-testid="login-btn"
             disabled={loading}
             className="w-full bg-primary hover:bg-primary-dark disabled:bg-gray-400 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary/10 flex items-center justify-center gap-2 cursor-pointer"
           >

@@ -1,0 +1,23 @@
+{
+  "name": "shopcart_fe_be",
+  "version": "1.0.0",
+  "description": "> **Bài Tập Lớn - Kiểm Thử Phần Mềm**\r > \r > **Version**: 1.1 | **Niên khóa**: 2025-2026 | **GVHD**: Từ Lãng Phiêu\r > \r > **Trường**: Đại học Sài Gòn - Khoa Công Nghệ Thông Tin\r > \r > **Document created**: May 4, 2026\r > **Course**: Kiểm Thử Phần Mềm (Software Testing)\r > **Version**: 1.1",
+  "main": "index.js",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.2"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuong9565/ShopCart_FE_BE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/cuong9565/ShopCart_FE_BE/issues"
+  },
+  "homepage": "https://github.com/cuong9565/ShopCart_FE_BE#readme"
+}
