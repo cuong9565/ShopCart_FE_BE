@@ -1,67 +1,55 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Cart E2E Tests', () => {
-  
-  // =========================
-  // BEFORE EACH: LOGIN + GO TO PRODUCTS
-  // =========================
+
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:5173');
 
-    // mở login modal (QUAN TRỌNG)
-    await page.click('text=Đăng nhập');
+    // =========================
+    // 1. OPEN LOGIN MODAL
+    // =========================
+    await page.click('[data-testid="login-open-btn"]');
 
-    // đợi modal render
-    await page.waitForSelector('[data-testid="email-input"]');
+    // =========================
+    // 2. LOGIN
+    // =========================
+    await expect(page.locator('[data-testid="email-input"]')).toBeVisible();
 
-    // Login
-    await page.fill('[data-testid="email-input"]', 'testuser');
-    await page.fill('[data-testid="password-input"]', 'Test123');
+    await page.fill('[data-testid="email-input"]', 'linhtran@gmail.com');
+    await page.fill('[data-testid="password-input"]', '123456');
+
     await page.click('[data-testid="login-btn"]');
 
-    // đợi login xong
-    await page.waitForURL('**/products');
-    });
-  // =========================
-  // 1. ADD TO CART SUCCESS
-  // =========================
-  test('Add to cart success', async ({ page }) => {
-
-    // click product add to cart (giả sử product id = 1)
-    await page.click('[data-testid="add-to-cart-btn-1"]');
-
-    // check success message (nếu bạn có alert thì bỏ qua, hoặc toast)
-    // check cart badge update
-    await expect(
-      page.locator('[data-testid="cart-badge"]')
-    ).toHaveText('1');
+    // =========================
+    // 3. WAIT APP READY (KHÔNG WAIT URL)
+    // =========================
+    await expect(page.locator('[data-testid="product-list"]')).toBeVisible();
   });
 
   // =========================
-  // 2. UPDATE QUANTITY IN CART
+  // 1. ADD TO CART
   // =========================
-  test('Update quantity in cart', async ({ page }) => {
-    await page.goto('http://localhost:5173');
+  test('Add to cart success', async ({ page }) => {
 
-    await page.click('text=Đăng nhập');
-    await page.fill('[data-testid="email-input"]', 'testuser');
-    await page.fill('[data-testid="password-input"]', 'Test123');
-    await page.click('[data-testid="login-btn"]');
-
-    await page.waitForURL('**/products');
-
-    // add product trước
     await page.click('[data-testid="add-to-cart-btn-1"]');
 
-    // rồi mới vào cart
+    await expect(page.locator('[data-testid="cart-badge"]'))
+      .toHaveText('1');
+  });
+
+  // =========================
+  // 2. UPDATE QUANTITY
+  // =========================
+  test('Update quantity in cart', async ({ page }) => {
+
     await page.goto('http://localhost:5173/cart');
 
     await page.click('[data-testid="increase-btn-1"]');
 
-    await expect(
-        page.locator('[data-testid="cart-quantity-1"]')
-    ).toHaveText('2');
+    await expect(page.locator('[data-testid="cart-quantity-1"]'))
+      .toHaveText('2');
   });
+
   // =========================
   // 3. DECREASE QUANTITY
   // =========================
@@ -71,13 +59,12 @@ test.describe('Cart E2E Tests', () => {
 
     await page.click('[data-testid="decrease-btn-1"]');
 
-    await expect(
-      page.locator('[data-testid="cart-quantity-1"]')
-    ).toHaveText('1');
+    await expect(page.locator('[data-testid="cart-quantity-1"]'))
+      .toHaveText('1');
   });
 
   // =========================
-  // 4. REMOVE ITEM FROM CART
+  // 4. REMOVE ITEM
   // =========================
   test('Remove item from cart', async ({ page }) => {
 
@@ -85,34 +72,28 @@ test.describe('Cart E2E Tests', () => {
 
     await page.click('[data-testid="remove-item-1"]');
 
-    // item biến mất
-    await expect(
-      page.locator('[data-testid="cart-item-1"]')
-    ).toHaveCount(0);
+    await expect(page.locator('[data-testid="cart-item-1"]'))
+      .toHaveCount(0);
   });
 
   // =========================
-  // 5. TOTAL PRICE UPDATE
+  // 5. TOTAL PRICE
   // =========================
   test('Cart total updates correctly', async ({ page }) => {
 
     await page.goto('http://localhost:5173/cart');
 
-    // check total tồn tại
-    await expect(
-      page.locator('[data-testid="cart-total"]')
-    ).toBeVisible();
+    await expect(page.locator('[data-testid="cart-total"]'))
+      .toBeVisible();
 
-    // click tăng quantity
     await page.click('[data-testid="increase-btn-1"]');
 
-    // total phải thay đổi (không fix số vì dynamic)
     const total = await page.locator('[data-testid="cart-total"]').textContent();
     expect(total).not.toBeNull();
   });
 
   // =========================
-  // 6. CHECKOUT FLOW
+  // 6. CHECKOUT
   // =========================
   test('Checkout button works', async ({ page }) => {
 
@@ -120,7 +101,6 @@ test.describe('Cart E2E Tests', () => {
 
     await page.click('[data-testid="checkout-btn"]');
 
-    // ví dụ redirect hoặc message
     await expect(page).toHaveURL(/checkout|order|success/);
   });
 
