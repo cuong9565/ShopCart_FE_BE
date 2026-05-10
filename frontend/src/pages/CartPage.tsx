@@ -1,60 +1,18 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
-import type { CartItem } from '../types'; 
-
+import { useCart } from '../hooks/useCart';
 
 const CartPage = () => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const { cart, updateQuantity, removeItem, total, loading } = useCart(true);
 
-  // 1. LOAD CART
-  useEffect(() => {
-    fetchCart();
-  }, []);
-
-  const fetchCart = async () => {
-    try {
-      const res = await axios.get('http://localhost:8080/api/cart', {
-        withCredentials: true,
-      });
-
-      setCart(res.data);
-    } catch (error) {
-      console.log('Lỗi load cart:', error);
-    }
-  };
-
-  // 2. UPDATE QUANTITY
-  const updateQuantity = async (productId: string, quantity: number) => {
-    if (quantity < 1) return;
-
-    await axios.put(
-      'http://localhost:8080/api/cart',
-      { productId, quantity },
-      { withCredentials: true }
-    );
-
-    fetchCart();
-  };
-
-  // 3. REMOVE ITEM
-  const removeItem = async (productId: string) => {
-    await axios.delete('http://localhost:8080/api/cart', {
-      data: { productId },
-      withCredentials: true,
-    });
-
-    fetchCart();
-  };
-
-  // 4. TOTAL
-  const total = cart.reduce(
-    (sum, item) => sum + item.subtotal,
-    0
-  );
-
-  // 5. EMPTY CART UI
+  // 1. EMPTY CART UI
   if (cart.length === 0) {
+    if (loading) {
+      return (
+        <div className="max-w-6xl mx-auto px-4 py-16 text-center">
+          <p className="text-gray-500">Đang tải giỏ hàng...</p>
+        </div>
+      );
+    }
     return (
       <div className="max-w-6xl mx-auto px-4 py-16 text-center">
         <h1 className="text-3xl font-bold mb-4">Giỏ hàng</h1>
