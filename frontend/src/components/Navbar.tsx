@@ -84,7 +84,10 @@ const Navbar = () => {
                 <FontAwesomeIcon icon={faShoppingCart} size="lg" />
 
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span
+                    data-testid="cart-badge"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                  >
                     {cartCount}
                   </span>
                 )}
@@ -124,6 +127,7 @@ const Navbar = () => {
         ) : (
           <button
             onClick={() => setShowLoginModal(true)}
+            data-testid="open-login-modal-btn"
             className="bg-primary hover:bg-primary-dark text-white transition-all font-semibold text-sm cursor-pointer py-1.5 px-5 rounded-md border border-transparent shadow-lg shadow-primary/10"
           >
             Đăng nhập

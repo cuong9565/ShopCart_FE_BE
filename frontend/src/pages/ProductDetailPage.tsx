@@ -3,12 +3,44 @@ import { useProductDetail } from '../hooks/useProductDetail';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight, faCartPlus, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
+import axios from 'axios';
+import { showToast } from '../utils/toast';
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { product, loading, error } = useProductDetail(id);
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState<string | null>(null);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    try {
+      if (quantity > product.stockQuantity) {
+        showToast('Số lượng vượt quá tồn kho', 'error');
+        return;
+      }
+
+      await axios.post(
+        'http://localhost:8080/api/cart',
+        { productId: product.id, quantity: quantity },
+        { withCredentials: true }
+      );
+      window.dispatchEvent(new Event('cartUpdated'));
+      showToast('Thêm vào giỏ hàng thành công', 'success');
+    } catch (err: any) {
+      console.log('Add to cart error:', err);
+      if (err.response?.status === 401) {
+        showToast('Vui lòng đăng nhập để thêm vào giỏ hàng', 'error');
+        return;
+      }
+      const msg = err.response?.data?.message || 'Thêm vào giỏ hàng thất bại';
+      if (msg.toLowerCase().includes('inventory') || msg.toLowerCase().includes('tồn kho')) {
+        showToast('Số lượng vượt quá tồn kho', 'error');
+      } else {
+        showToast('Thêm vào giỏ hàng thất bại', 'error');
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -101,7 +133,20 @@ const ProductDetailPage = () => {
                   >
                     <FontAwesomeIcon icon={faMinus} className="text-xs" />
                   </button>
-                  <span className="w-12 text-center font-medium text-gray-900">{quantity}</span>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (!isNaN(val)) {
+                        setQuantity(val);
+                      } else {
+                        setQuantity(1);
+                      }
+                    }}
+                    className="w-12 text-center font-medium text-gray-900 border-none focus:outline-none focus:ring-0"
+                    data-testid="quantity-input"
+                  />
                   <button
                     onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
                     className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors disabled:opacity-50"
@@ -113,6 +158,8 @@ const ProductDetailPage = () => {
               </div>
 
               <button
+                onClick={handleAddToCart}
+                data-testid="add-to-cart-btn"
                 className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-3 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg shadow-primary/10"
                 disabled={product.stockQuantity === 0}
               >

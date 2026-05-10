@@ -87,6 +87,7 @@ const CartPage = () => {
           {cart.map((item) => (
             <div
               key={item.productId}
+              data-testid="cart-item"
               className="bg-white rounded-xl shadow-sm p-4 flex gap-4"
             >
               {/* IMAGE */}
@@ -114,12 +115,13 @@ const CartPage = () => {
                         item.quantity - 1
                       )
                     }
+                    data-testid="decrease-qty-btn"
                     className="w-8 h-8 border rounded"
                   >
                     -
                   </button>
 
-                  <span>{item.quantity}</span>
+                  <span data-testid="cart-item-qty">{item.quantity}</span>
 
                   <button
                     onClick={() =>
@@ -128,6 +130,7 @@ const CartPage = () => {
                         item.quantity + 1
                       )
                     }
+                    data-testid="increase-qty-btn"
                     className="w-8 h-8 border rounded"
                   >
                     +
@@ -138,6 +141,7 @@ const CartPage = () => {
               {/* DELETE */}
               <button
                 onClick={() => removeItem(item.productId)}
+                data-testid="remove-item-btn"
                 className="text-red-500 font-medium"
               >
                 Xóa
@@ -155,12 +159,18 @@ const CartPage = () => {
           <div className="flex justify-between mb-4">
             <span>Tổng tiền</span>
 
-            <span className="font-bold text-red-500 text-xl">
+            <span
+              data-testid="cart-total-price"
+              className="font-bold text-red-500 text-xl"
+            >
               {total.toLocaleString('vi-VN')}₫
             </span>
           </div>
 
-          <button className="w-full bg-black text-white py-3 rounded-lg mt-4 hover:bg-gray-800 transition">
+          <button
+            data-testid="checkout-btn"
+            className="w-full bg-black text-white py-3 rounded-lg mt-4 hover:bg-gray-800 transition"
+          >
             Thanh toán
           </button>
         </div>
