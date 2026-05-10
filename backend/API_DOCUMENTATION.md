@@ -8,6 +8,8 @@
 5. [Address APIs](#address-apis)
 6. [Shipping Methods APIs](#shipping-methods-apis)
 7. [Payment Methods APIs](#payment-methods-apis)
+8. [Coupon APIs](#coupon-apis)
+9. [Order APIs](#order-apis)
 
 ---
 
@@ -458,6 +460,132 @@ curl -X DELETE http://localhost:8080/api/cart \
 
 ---
 
+## 5. Get Cart Total Amount
+
+### Endpoint
+`GET /api/cart/total`
+
+### Mục đích
+Lấy tổng số tiền của tất cả sản phẩm trong giỏ hàng của người dùng đã đăng nhập
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/cart/total \
+  -H "Cookie: JSESSIONID=ABC123..."
+```
+
+### Success Response (200 OK)
+```json
+125.99
+```
+
+### Notes
+- Trả về tổng số tiền (giá sản phẩm × số lượng) của tất cả sản phẩm trong giỏ
+- Nếu giỏ hàng trống, trả về `0.00`
+- Sử dụng `BigDecimal` để đảm bảo tính chính xác của số tiền
+
+---
+
+## 6. Calculate Cart Pricing
+
+### Endpoint
+`POST /api/cart/pricing`
+
+### Mục đích
+Tính toán giá chi tiết cho giỏ hàng bao gồm giảm giá, phí vận chuyển và tổng số tiền cuối cùng.
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Request Body
+```json
+{
+  "couponCodes": ["SAVE10", "FREESHIP"],
+  "shippingMethodId": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+### Validation Rules
+- `couponCodes`: Không bắt buộc, danh sách mã giảm giá cần áp dụng
+- `shippingMethodId`: Không bắt buộc, ID của phương thức vận chuyển đã chọn
+
+### Endpoint Demo
+```bash
+curl -X POST http://localhost:8080/api/cart/pricing \
+  -H "Content-Type: application/json" \
+  -H "Cookie: JSESSIONID=ABC123..." \
+  -d '{
+    "couponCodes": ["SAVE10", "FREESHIP"],
+    "shippingMethodId": "123e4567-e89b-12d3-a456-426614174000"
+  }'
+```
+
+### Success Response (200 OK)
+```json
+{
+  "totalProductAmount": 250.00,
+  "totalAfterProductDiscounts": 225.00,
+  "baseShippingFee": 25.00,
+  "finalShippingFee": 0.00,
+  "finalTotalAmount": 225.00,
+  "appliedOrderCoupons": [
+    {
+      "code": "SAVE10",
+      "discountValue": 10.00,
+      "discountType": "PERCENT",
+      "appliedAmount": 25.00,
+      "scope": "ORDER"
+    }
+  ],
+  "appliedShippingCoupons": [
+    {
+      "code": "FREESHIP",
+      "discountValue": 25.00,
+      "discountType": "FIXED",
+      "appliedAmount": 25.00,
+      "scope": "SHIPPING"
+    }
+  ],
+  "shippingMethod": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "code": "STANDARD",
+    "name": "Giao hàng tiêu chuẩn",
+    "description": "Giao hàng trong 3-5 ngày làm việc",
+    "baseFee": 25.00,
+    "estimatedDaysMin": 3,
+    "estimatedDaysMax": 5
+  },
+  "estimatedDelivery": {
+    "minDays": 3,
+    "maxDays": 5,
+    "minDate": "2026-05-13",
+    "maxDate": "2026-05-15"
+  }
+}
+```
+
+### Response Fields
+- `totalProductAmount`: Tổng giá trị sản phẩm trước khi giảm giá
+- `totalAfterProductDiscounts`: Tổng giá trị sau khi áp dụng giảm giá sản phẩm
+- `baseShippingFee`: Phí vận chuyển gốc
+- `finalShippingFee`: Phí vận chuyển sau khi áp dụng giảm giá vận chuyển
+- `finalTotalAmount`: Tổng số tiền cuối cùng phải thanh toán
+- `appliedOrderCoupons`: Danh sách coupon giảm giá cho đơn hàng đã áp dụng
+- `appliedShippingCoupons`: Danh sách coupon giảm giá vận chuyển đã áp dụng
+- `shippingMethod`: Thông tin phương thức vận chuyển
+- `estimatedDelivery`: Thông tin ước tính thời gian giao hàng
+
+### Notes
+- Coupon không hợp lệ sẽ bị bỏ qua tự động
+- Giảm giá vận chuyển chỉ áp dụng cho phí vận chuyển, không cho sản phẩm
+- Nếu không có shipping method, `shippingMethod` sẽ là null
+- Thời gian giao hàng được tính từ ngày hiện tại
+
+---
+
 ## Address APIs
 
 ### Overview
@@ -829,6 +957,377 @@ curl -X GET http://localhost:8080/api/payment-methods/123e4567-e89b-12d3-a456-42
   "status": "NOT_FOUND"
 }
 ```
+
+---
+
+## Coupon APIs
+
+### Overview
+Quản lý mã giảm giá với các thao tác lấy danh sách mã giảm giá hợp lệ cho người dùng. Yêu cầu authentication để truy cập.
+
+---
+
+## 1. Get Valid Coupons for User
+
+### Endpoint
+`GET /api/coupons/valid`
+
+### Mục đích
+Lấy danh sách tất cả mã giảm giá hợp lệ cho người dùng đã đăng nhập, bao gồm thông tin về số lần sử dụng còn lại và khả năng áp dụng cho giỏ hàng hiện tại.
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/coupons/valid \
+  -H "Cookie: JSESSIONID=ABC123..."
+```
+
+### Success Response (200 OK)
+```json
+[
+  {
+    "code": "SAVE10",
+    "discountValue": 10.00,
+    "discountType": "PERCENT",
+    "minOrderValue": 100.00,
+    "maxDiscount": 50.00,
+    "scope": "ORDER",
+    "startDate": "2026-05-01T00:00:00",
+    "expiryDate": "2026-05-31T23:59:59",
+    "remainingUsage": 2,
+    "applicableToCurrentCart": true
+  },
+  {
+    "code": "FREESHIP",
+    "discountValue": 25.00,
+    "discountType": "FIXED",
+    "minOrderValue": 0.00,
+    "maxDiscount": null,
+    "scope": "SHIPPING",
+    "startDate": "2026-05-01T00:00:00",
+    "expiryDate": "2026-05-31T23:59:59",
+    "remainingUsage": 1,
+    "applicableToCurrentCart": true
+  }
+]
+```
+
+### Response Fields
+- `code`: Mã giảm giá
+- `discountValue`: Giá trị giảm giá
+- `discountType`: Loại giảm giá (`FIXED` hoặc `PERCENT`)
+- `minOrderValue`: Giá trị đơn hàng tối thiểu để áp dụng
+- `maxDiscount`: Giảm giá tối đa (cho loại PERCENT)
+- `scope`: Phạm vi áp dụng (`ORDER` hoặc `SHIPPING`)
+- `startDate`: Thời gian bắt đầu hiệu lực
+- `expiryDate`: Thời gian hết hạn
+- `remainingUsage`: Số lần sử dụng còn lại của user
+- `applicableToCurrentCart`: Có thể áp dụng cho giỏ hàng hiện tại không
+
+### Notes
+- Chỉ trả về các coupon đang active và trong khoảng thời gian hiệu lực
+- `applicableToCurrentCart` được tính toán tự động dựa trên tổng giá trị giỏ hàng hiện tại của user
+- `remainingUsage` được tính bằng `usagePerUser - số lần đã sử dụng`
+- Chỉ trả về các coupon có `remainingUsage > 0`
+
+---
+
+## Order APIs
+
+### Overview
+Quản lý đơn hàng của người dùng với các thao tác đặt hàng, xem chi tiết đơn hàng, và xem lịch sử đơn hàng. Yêu cầu authentication để truy cập.
+
+---
+
+## 1. Place Order
+
+### Endpoint
+`POST /api/orders`
+
+### Mục đích
+Đặt một đơn hàng mới từ giỏ hàng của người dùng đã đăng nhập. Thực hiện validation đầy đủ, áp dụng mã giảm giá, kiểm tra tồn kho, và tạo đơn hàng với tất cả thông tin liên quan.
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Request Body
+```json
+{
+  "addressId": "123e4567-e89b-12d3-a456-426614174000",
+  "shippingMethodId": "456e7890-f12c-34d5-b789-012345678901",
+  "paymentMethodId": "789e0123-f45g-67h8-i901-234567890123",
+  "shippingFullName": "Nguyễn Văn A",
+  "shippingPhone": "0912345678",
+  "couponIds": ["111e2223-f44g-55h6-i789-012345678901"]
+}
+```
+
+### Validation Rules
+- `addressId`: Bắt buộc, phải là UUID hợp lệ và thuộc về user
+- `shippingMethodId`: Bắt buộc, phải là UUID hợp lệ và đang active
+- `paymentMethodId`: Bắt buộc, phải là UUID hợp lệ và đang active
+- `shippingFullName`: Bắt buộc, tên người nhận hàng
+- `shippingPhone`: Bắt buộc, số điện thoại người nhận hàng
+- `couponIds`: Không bắt buộc, danh sách ID mã giảm giá cần áp dụng
+
+### Endpoint Demo
+```bash
+curl -X POST http://localhost:8080/api/orders \
+  -H "Content-Type: application/json" \
+  -H "Cookie: JSESSIONID=ABC123..." \
+  -d '{
+    "addressId": "123e4567-e89b-12d3-a456-426614174000",
+    "shippingMethodId": "456e7890-f12c-34d5-b789-012345678901",
+    "paymentMethodId": "789e0123-f45g-67h8-i901-234567890123",
+    "shippingFullName": "Nguyễn Văn A",
+    "shippingPhone": "0912345678",
+    "couponIds": ["111e2223-f44g-55h6-i789-012345678901"]
+  }'
+```
+
+### Success Response (200 OK)
+```json
+{
+  "id": "999e8887-f66g-77h8-i901-234567890123",
+  "status": "PENDING",
+  "shippingInfo": {
+    "fullName": "Nguyễn Văn A",
+    "phone": "0912345678",
+    "addressLine": "123 Nguyễn Huệ, Phường Bến Thành",
+    "city": "Quận 1",
+    "district": "TP. Hồ Chí Minh",
+    "ward": "Bến Thành",
+    "methodName": "Giao hàng tiêu chuẩn",
+    "shippingFee": 25000.00,
+    "estimatedDeliveryMin": 3,
+    "estimatedDeliveryMax": 5
+  },
+  "paymentInfo": {
+    "methodName": "Thanh toán khi nhận hàng (COD)",
+    "status": "PENDING"
+  },
+  "items": [
+    {
+      "productId": "456e7890-f12c-34d5-b789-012345678901",
+      "productName": "iPhone 15 Pro",
+      "quantity": 2,
+      "price": 999.99,
+      "totalPrice": 1999.98
+    }
+  ],
+  "pricingInfo": {
+    "subtotal": 1999.98,
+    "shippingFee": 25000.00,
+    "discount": 199.99,
+    "couponDiscount": 199.99,
+    "finalPrice": 2079.99
+  },
+  "createdAt": "2026-05-10T19:30:00",
+  "updatedAt": "2026-05-10T19:30:00",
+  "appliedCoupons": [
+    {
+      "couponId": "111e2223-f44g-55h6-i789-012345678901",
+      "code": "SAVE10",
+      "discountAmount": 199.99
+    }
+  ]
+}
+```
+
+### Error Response (400 Bad Request)
+```json
+{
+  "error": "Cannot place order with empty cart",
+  "status": "BAD_REQUEST"
+}
+```
+
+### Error Response (400 Bad Request) - Invalid Coupon
+```json
+{
+  "error": "Invalid coupon: 111e2223-f44g-55h6-i789-012345678901 - Coupon usage limit exceeded",
+  "status": "BAD_REQUEST"
+}
+```
+
+### Error Response (400 Bad Request) - Insufficient Inventory
+```json
+{
+  "error": "Insufficient inventory for product: iPhone 15 Pro",
+  "status": "BAD_REQUEST"
+}
+```
+
+### Notes
+- Giỏ hàng của user sẽ được tự động làm trống sau khi đặt hàng thành công
+- Tồn kho sản phẩm sẽ được tự động giảm sau khi đặt hàng thành công
+- Coupon sẽ được validate trước khi áp dụng: kiểm tra trạng thái active, ngày hiệu lực, giới hạn sử dụng, và giá trị đơn hàng tối thiểu
+- Giá trị đơn hàng không bao giờ âm (nếu discount > subtotal, finalPrice sẽ là 0)
+- Tất cả các validation được thực hiện trong một transaction để đảm bảo tính nhất quán
+
+---
+
+## 2. Get Order Details
+
+### Endpoint
+`GET /api/orders/{orderId}`
+
+### Mục đích
+Lấy thông tin chi tiết của một đơn hàng cụ thể của người dùng đã đăng nhập
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Path Parameters
+- `orderId`: ID của đơn hàng cần xem
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/orders/999e8887-f66g-77h8-i901-234567890123 \
+  -H "Cookie: JSESSIONID=ABC123..."
+```
+
+### Success Response (200 OK)
+```json
+{
+  "id": "999e8887-f66g-77h8-i901-234567890123",
+  "status": "PENDING",
+  "shippingInfo": {
+    "fullName": "Nguyễn Văn A",
+    "phone": "0912345678",
+    "addressLine": "123 Nguyễn Huệ, Phường Bến Thành",
+    "city": "Quận 1",
+    "district": "TP. Hồ Chí Minh",
+    "ward": "Bến Thành",
+    "methodName": "Giao hàng tiêu chuẩn",
+    "shippingFee": 25000.00,
+    "estimatedDeliveryMin": 3,
+    "estimatedDeliveryMax": 5
+  },
+  "paymentInfo": {
+    "methodName": "Thanh toán khi nhận hàng (COD)",
+    "status": "PENDING"
+  },
+  "items": [
+    {
+      "productId": "456e7890-f12c-34d5-b789-012345678901",
+      "productName": "iPhone 15 Pro",
+      "quantity": 2,
+      "price": 999.99,
+      "totalPrice": 1999.98
+    }
+  ],
+  "pricingInfo": {
+    "subtotal": 1999.98,
+    "shippingFee": 25000.00,
+    "discount": 199.99,
+    "couponDiscount": 199.99,
+    "finalPrice": 2079.99
+  },
+  "createdAt": "2026-05-10T19:30:00",
+  "updatedAt": "2026-05-10T19:30:00",
+  "appliedCoupons": [
+    {
+      "couponId": "111e2223-f44g-55h6-i789-012345678901",
+      "code": "SAVE10",
+      "discountAmount": 199.99
+    }
+  ]
+}
+```
+
+### Error Response (404 Not Found)
+```json
+{
+  "error": "Order not found with id: 999e8887-f66g-77h8-i901-234567890123",
+  "status": "NOT_FOUND"
+}
+```
+
+### Error Response (403 Forbidden)
+```json
+{
+  "error": "Order does not belong to user",
+  "status": "FORBIDDEN"
+}
+```
+
+---
+
+## 3. Get User Orders
+
+### Endpoint
+`GET /api/orders`
+
+### Mục đích
+Lấy danh sách tất cả đơn hàng của người dùng đã đăng nhập, sắp xếp theo ngày tạo mới nhất
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/orders \
+  -H "Cookie: JSESSIONID=ABC123..."
+```
+
+### Success Response (200 OK)
+```json
+[
+  {
+    "id": "999e8887-f66g-77h8-i901-234567890123",
+    "status": "PENDING",
+    "shippingInfo": {
+      "fullName": "Nguyễn Văn A",
+      "phone": "0912345678",
+      "addressLine": "123 Nguyễn Huệ, Phường Bến Thành",
+      "city": "Quận 1",
+      "district": "TP. Hồ Chí Minh",
+      "ward": "Bến Thành",
+      "methodName": "Giao hàng tiêu chuẩn",
+      "shippingFee": 25000.00,
+      "estimatedDeliveryMin": 3,
+      "estimatedDeliveryMax": 5
+    },
+    "paymentInfo": {
+      "methodName": "Thanh toán khi nhận hàng (COD)",
+      "status": "PENDING"
+    },
+    "items": [
+      {
+        "productId": "456e7890-f12c-34d5-b789-012345678901",
+        "productName": "iPhone 15 Pro",
+        "quantity": 2,
+        "price": 999.99,
+        "totalPrice": 1999.98
+      }
+    ],
+    "pricingInfo": {
+      "subtotal": 1999.98,
+      "shippingFee": 25000.00,
+      "discount": 199.99,
+      "couponDiscount": 199.99,
+      "finalPrice": 2079.99
+    },
+    "createdAt": "2026-05-10T19:30:00",
+    "updatedAt": "2026-05-10T19:30:00",
+    "appliedCoupons": [
+      {
+        "couponId": "111e2223-f44g-55h6-i789-012345678901",
+        "code": "SAVE10",
+        "discountAmount": 199.99
+      }
+    ]
+  }
+]
+```
+
+### Notes
+- Danh sách được sắp xếp theo ngày tạo giảm dần (mới nhất trước)
+- Chỉ trả về các đơn hàng của user đang đăng nhập
+- Nếu user chưa có đơn hàng nào, trả về mảng rỗng
 
 ---
 

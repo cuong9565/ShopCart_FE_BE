@@ -167,6 +167,25 @@
         </excludes>
     </configuration>
 </plugin> -->
+
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.12</version>
+    <configuration>
+        <excludes>
+            <exclude>com/shopcart/controller/**</exclude>
+            <exclude>com/shopcart/entity/**</exclude>
+            <exclude>com/shopcart/repository/**</exclude>
+            <exclude>com/shopcart/dto/**</exclude>
+            <exclude>com/shopcart/security/**</exclude>
+            <exclude>com/shopcart/config/**</exclude>
+            <exclude>com/shopcart/service/Order*</exclude>
+            <exclude>com/shopcart/service/Product*</exclude>
+            <exclude>com/shopcart/service/User*</exclude>
+        </excludes>
+    </configuration>
+</plugin>
 		</plugins>
 	</build>
 
