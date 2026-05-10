@@ -1,25 +1,11 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartPlus } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { useCart } from '../hooks/useCart';
 import type { Product } from '../types';
 
 const ProductCard = ({ product }: { product: Product }) => {
-  const addToCart = async (productId: string) => {
-    try {
-      await axios.post(
-        'http://localhost:8080/api/cart',
-        {  productId, quantity: 1},
-        {  withCredentials: true}
-      );
-      window.dispatchEvent(new Event('cartUpdated'));
-
-      alert('Đã thêm vào giỏ hàng!');
-    } catch (error) {
-      console.log('Add to cart error:', error);
-      alert('Thêm vào giỏ hàng thất bại!');
-    }
-  };
+  const { addToCart } = useCart();
 
   return (
     <Link
@@ -52,7 +38,7 @@ const ProductCard = ({ product }: { product: Product }) => {
           <button
             onClick={(e) => {
               e.preventDefault(); // không redirect link
-              addToCart(product.id);
+              addToCart(product.id, 1);
             }}
             className="p-3 cursor-pointer text-gray-400 hover:text-blue-600 transition-colors"
           >
