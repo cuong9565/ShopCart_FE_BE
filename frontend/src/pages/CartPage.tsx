@@ -59,12 +59,13 @@ const CartPage = () => {
       <div className="max-w-6xl mx-auto px-4 py-16 text-center">
         <h1 className="text-3xl font-bold mb-4">Giỏ hàng</h1>
 
-        <p className="text-gray-500 mb-6">
+        <p data-testid="empty-cart-message" className="text-gray-500 mb-6">
           Giỏ hàng của bạn đang trống
         </p>
 
         <Link
           to="/"
+          data-testid="continue-shopping-btn"
           className="bg-black text-white px-6 py-3 rounded-lg"
         >
           Tiếp tục mua sắm
@@ -83,31 +84,34 @@ const CartPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* LEFT: CART ITEMS */}
-        <div className="lg:col-span-2 space-y-4">
+        <div data-testid="cart-items-list" className="lg:col-span-2 space-y-4">
           {cart.map((item) => (
             <div
               key={item.productId}
+              data-testid={`cart-item-${item.productId}`}
               className="bg-white rounded-xl shadow-sm p-4 flex gap-4"
             >
               {/* IMAGE */}
               <img
                 src={item.thumbnailImage}
+                data-testid={`cart-item-image-${item.productId}`}
                 className="w-28 h-28 object-cover rounded-lg"
               />
 
               {/* INFO */}
               <div className="flex-1">
-                <h2 className="font-semibold text-lg">
+                <h2 data-testid={`cart-item-name-${item.productId}`} className="font-semibold text-lg">
                   {item.productName}
                 </h2>
 
-                <p className="text-red-500 font-bold mt-2">
+                <p data-testid={`cart-item-price-${item.productId}`} className="text-red-500 font-bold mt-2">
                   {item.productPrice.toLocaleString('vi-VN')}₫
                 </p>
 
                 {/* QUANTITY */}
                 <div className="flex items-center gap-3 mt-4">
                   <button
+                    data-testid={`cart-item-decrease-${item.productId}`}
                     onClick={() =>
                       updateQuantity(
                         item.productId,
@@ -119,9 +123,10 @@ const CartPage = () => {
                     -
                   </button>
 
-                  <span>{item.quantity}</span>
+                  <span data-testid={`cart-quantity-${item.productId}`}>{item.quantity}</span>
 
                   <button
+                    data-testid={`cart-item-increase-${item.productId}`}
                     onClick={() =>
                       updateQuantity(
                         item.productId,
@@ -137,6 +142,7 @@ const CartPage = () => {
 
               {/* DELETE */}
               <button
+                data-testid={`remove-item-${item.productId}`}
                 onClick={() => removeItem(item.productId)}
                 className="text-red-500 font-medium"
               >
@@ -148,19 +154,19 @@ const CartPage = () => {
 
         {/* RIGHT: SUMMARY */}
         <div className="bg-white rounded-xl shadow-sm p-6 h-fit">
-          <h2 className="text-2xl font-bold mb-6">
+          <h2 data-testid="order-summary-title" className="text-2xl font-bold mb-6">
             Tóm tắt đơn hàng
           </h2>
 
           <div className="flex justify-between mb-4">
             <span>Tổng tiền</span>
 
-            <span className="font-bold text-red-500 text-xl">
+            <span data-testid="order-total" className="font-bold text-red-500 text-xl">
               {total.toLocaleString('vi-VN')}₫
             </span>
           </div>
 
-          <button className="w-full bg-black text-white py-3 rounded-lg mt-4 hover:bg-gray-800 transition">
+          <button data-testid="checkout-btn" className="w-full bg-black text-white py-3 rounded-lg mt-4 hover:bg-gray-800 transition">
             Thanh toán
           </button>
         </div>
