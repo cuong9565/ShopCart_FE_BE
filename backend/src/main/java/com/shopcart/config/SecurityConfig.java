@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
-                .requestMatchers("/api/orders/**").permitAll()
+                .requestMatchers("/api/orders/**").authenticated()
                 .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/shipping-methods/**").permitAll()
                 .requestMatchers("/api/payment-methods/**").permitAll()

@@ -1,5 +1,6 @@
 package com.shopcart.repository;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -38,4 +39,13 @@ public interface OrderCouponRepository extends JpaRepository<OrderCoupon, UUID> 
            nativeQuery = true)
     long countCouponUsageByUser(@Param("couponId") UUID couponId, 
                                 @Param("userId") UUID userId);
+
+    /**
+     * Finds all coupons applied to a specific order.
+     *
+     * @param orderId The order ID to search for
+     * @return List of order coupons for the specified order
+     */
+    @Query("SELECT oc FROM OrderCoupon oc WHERE oc.orderId = :orderId")
+    List<OrderCoupon> findByOrderId(@Param("orderId") UUID orderId);
 }
