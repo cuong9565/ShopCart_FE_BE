@@ -44,12 +44,6 @@ public class OrderCoupon {
     private UUID couponId;
 
     /**
-     * Additional ID field (purpose unclear from schema)
-     */
-    @Column(name = "id", nullable = false)
-    private UUID id;
-
-    /**
      * The actual discount amount applied
      */
     @Column(name = "applied_amount", precision = 19, scale = 2)

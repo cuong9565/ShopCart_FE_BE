@@ -2,6 +2,7 @@ package com.shopcart.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,6 +19,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ValidCouponDTO {
+    
+    /**
+     * Unique identifier of the coupon
+     */
+    private UUID id;
     
     /**
      * The coupon code
@@ -77,6 +83,7 @@ public class ValidCouponDTO {
             Integer remainingUsage, 
             Boolean applicableToCurrentCart) {
         ValidCouponDTO dto = new ValidCouponDTO();
+        dto.setId(coupon.getId());
         dto.setCode(coupon.getCode());
         dto.setDiscountValue(coupon.getDiscountValue());
         dto.setDiscountType(coupon.getDiscountType().name());
