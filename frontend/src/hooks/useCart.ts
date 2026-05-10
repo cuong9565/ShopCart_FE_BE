@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { cartService } from '../services/cartService';
 import { showToast } from '../utils/toast';
 import type { CartItem } from '../types';
 
@@ -10,10 +10,8 @@ export const useCart = (autoFetch = false) => {
   const fetchCart = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:8080/api/cart', {
-        withCredentials: true,
-      });
-      setCart(res.data);
+      const data = await cartService.getCart();
+      setCart(data);
     } catch (error) {
       console.log('Lỗi load cart:', error);
     } finally {
@@ -30,11 +28,7 @@ export const useCart = (autoFetch = false) => {
   const addToCart = async (productId: string, quantity: number): Promise<boolean> => {
     try {
       setLoading(true);
-      await axios.post(
-        'http://localhost:8080/api/cart',
-        { productId, quantity },
-        { withCredentials: true }
-      );
+      await cartService.addToCart(productId, quantity);
       window.dispatchEvent(new Event('cartUpdated'));
       showToast('Thêm vào giỏ hàng thành công', 'success');
       return true;
@@ -60,11 +54,7 @@ export const useCart = (autoFetch = false) => {
     if (quantity < 1) return false;
     try {
       setLoading(true);
-      await axios.put(
-        'http://localhost:8080/api/cart',
-        { productId, quantity },
-        { withCredentials: true }
-      );
+      await cartService.updateQuantity(productId, quantity);
       await fetchCart();
       return true;
     } catch (err: any) {
@@ -84,10 +74,7 @@ export const useCart = (autoFetch = false) => {
   const removeItem = async (productId: string): Promise<boolean> => {
     try {
       setLoading(true);
-      await axios.delete('http://localhost:8080/api/cart', {
-        data: { productId },
-        withCredentials: true,
-      });
+      await cartService.removeItem(productId);
       await fetchCart();
       showToast('Đã xóa sản phẩm khỏi giỏ hàng', 'success');
       return true;
