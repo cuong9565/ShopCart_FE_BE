@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import com.shopcart.dto.AddToCartRequest;
 import com.shopcart.dto.CartItemResponseDTO;
+import com.shopcart.dto.CartPricingRequest;
+import com.shopcart.dto.CartPricingResponse;
 import com.shopcart.dto.UpdateCartRequest;
 
 /**
@@ -141,4 +143,24 @@ public interface CartService {
      * @return Total amount of all products in the cart
      */
     java.math.BigDecimal getCartTotalAmount(UUID userId);
+
+    /**
+     * Calculates comprehensive pricing for the user's cart including discounts and shipping.
+     *
+     * <p>This method provides detailed pricing calculation including:
+     * <ul>
+     *   <li>Total product amount before discounts</li>
+     *   <li>Applied coupon discounts (order and shipping)</li>
+     *   <li>Shipping fees and discounts</li>
+     *   <li>Final total amount</li>
+     *   <li>Estimated delivery timeframes</li>
+     * </ul>
+     * </p>
+     *
+     * @param userId The UUID of the user
+     * @param request The pricing request containing coupons and shipping method
+     * @return Comprehensive pricing response with all calculated values
+     * @throws IllegalArgumentException if user not found, invalid coupons, or shipping method not found
+     */
+    CartPricingResponse calculateCartPricing(UUID userId, CartPricingRequest request);
 }

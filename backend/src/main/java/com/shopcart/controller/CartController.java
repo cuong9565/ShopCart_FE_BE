@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.shopcart.dto.AddToCartRequest;
 import com.shopcart.dto.CartItemResponseDTO;
+import com.shopcart.dto.CartPricingRequest;
+import com.shopcart.dto.CartPricingResponse;
 import com.shopcart.dto.RemoveFromCartRequest;
 import com.shopcart.dto.UpdateCartRequest;
 import com.shopcart.security.CustomUserDetails;
@@ -139,5 +141,31 @@ public class CartController {
         UUID userId = userDetails.getId();
         java.math.BigDecimal totalAmount = cartService.getCartTotalAmount(userId);
         return ResponseEntity.ok(totalAmount);
+    }
+
+    /**
+     * Calculates comprehensive pricing for authenticated user's cart including discounts and shipping.
+     *
+     * <p>This endpoint provides detailed pricing calculation including:
+     * <ul>
+     *   <li>Total product amount before discounts</li>
+     *   <li>Applied coupon discounts (order and shipping)</li>
+     *   <li>Shipping fees and discounts</li>
+     *   <li>Final total amount</li>
+     *   <li>Estimated delivery timeframes</li>
+     * </ul>
+     * </p>
+     *
+     * @param request The pricing request containing coupons and shipping method
+     * @param userDetails The authenticated user details
+     * @return Comprehensive pricing response with all calculated values
+     */
+    @PostMapping("/pricing")
+    public ResponseEntity<CartPricingResponse> calculateCartPricing(
+            @Valid @RequestBody CartPricingRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        UUID userId = userDetails.getId();
+        CartPricingResponse response = cartService.calculateCartPricing(userId, request);
+        return ResponseEntity.ok(response);
     }
 }
