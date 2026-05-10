@@ -8,6 +8,7 @@
 5. [Address APIs](#address-apis)
 6. [Shipping Methods APIs](#shipping-methods-apis)
 7. [Payment Methods APIs](#payment-methods-apis)
+8. [Coupon APIs](#coupon-apis)
 
 ---
 
@@ -458,6 +459,132 @@ curl -X DELETE http://localhost:8080/api/cart \
 
 ---
 
+## 5. Get Cart Total Amount
+
+### Endpoint
+`GET /api/cart/total`
+
+### Mục đích
+Lấy tổng số tiền của tất cả sản phẩm trong giỏ hàng của người dùng đã đăng nhập
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/cart/total \
+  -H "Cookie: JSESSIONID=ABC123..."
+```
+
+### Success Response (200 OK)
+```json
+125.99
+```
+
+### Notes
+- Trả về tổng số tiền (giá sản phẩm × số lượng) của tất cả sản phẩm trong giỏ
+- Nếu giỏ hàng trống, trả về `0.00`
+- Sử dụng `BigDecimal` để đảm bảo tính chính xác của số tiền
+
+---
+
+## 6. Calculate Cart Pricing
+
+### Endpoint
+`POST /api/cart/pricing`
+
+### Mục đích
+Tính toán giá chi tiết cho giỏ hàng bao gồm giảm giá, phí vận chuyển và tổng số tiền cuối cùng.
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Request Body
+```json
+{
+  "couponCodes": ["SAVE10", "FREESHIP"],
+  "shippingMethodId": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+### Validation Rules
+- `couponCodes`: Không bắt buộc, danh sách mã giảm giá cần áp dụng
+- `shippingMethodId`: Không bắt buộc, ID của phương thức vận chuyển đã chọn
+
+### Endpoint Demo
+```bash
+curl -X POST http://localhost:8080/api/cart/pricing \
+  -H "Content-Type: application/json" \
+  -H "Cookie: JSESSIONID=ABC123..." \
+  -d '{
+    "couponCodes": ["SAVE10", "FREESHIP"],
+    "shippingMethodId": "123e4567-e89b-12d3-a456-426614174000"
+  }'
+```
+
+### Success Response (200 OK)
+```json
+{
+  "totalProductAmount": 250.00,
+  "totalAfterProductDiscounts": 225.00,
+  "baseShippingFee": 25.00,
+  "finalShippingFee": 0.00,
+  "finalTotalAmount": 225.00,
+  "appliedOrderCoupons": [
+    {
+      "code": "SAVE10",
+      "discountValue": 10.00,
+      "discountType": "PERCENT",
+      "appliedAmount": 25.00,
+      "scope": "ORDER"
+    }
+  ],
+  "appliedShippingCoupons": [
+    {
+      "code": "FREESHIP",
+      "discountValue": 25.00,
+      "discountType": "FIXED",
+      "appliedAmount": 25.00,
+      "scope": "SHIPPING"
+    }
+  ],
+  "shippingMethod": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "code": "STANDARD",
+    "name": "Giao hàng tiêu chuẩn",
+    "description": "Giao hàng trong 3-5 ngày làm việc",
+    "baseFee": 25.00,
+    "estimatedDaysMin": 3,
+    "estimatedDaysMax": 5
+  },
+  "estimatedDelivery": {
+    "minDays": 3,
+    "maxDays": 5,
+    "minDate": "2026-05-13",
+    "maxDate": "2026-05-15"
+  }
+}
+```
+
+### Response Fields
+- `totalProductAmount`: Tổng giá trị sản phẩm trước khi giảm giá
+- `totalAfterProductDiscounts`: Tổng giá trị sau khi áp dụng giảm giá sản phẩm
+- `baseShippingFee`: Phí vận chuyển gốc
+- `finalShippingFee`: Phí vận chuyển sau khi áp dụng giảm giá vận chuyển
+- `finalTotalAmount`: Tổng số tiền cuối cùng phải thanh toán
+- `appliedOrderCoupons`: Danh sách coupon giảm giá cho đơn hàng đã áp dụng
+- `appliedShippingCoupons`: Danh sách coupon giảm giá vận chuyển đã áp dụng
+- `shippingMethod`: Thông tin phương thức vận chuyển
+- `estimatedDelivery`: Thông tin ước tính thời gian giao hàng
+
+### Notes
+- Coupon không hợp lệ sẽ bị bỏ qua tự động
+- Giảm giá vận chuyển chỉ áp dụng cho phí vận chuyển, không cho sản phẩm
+- Nếu không có shipping method, `shippingMethod` sẽ là null
+- Thời gian giao hàng được tính từ ngày hiện tại
+
+---
+
 ## Address APIs
 
 ### Overview
@@ -829,6 +956,80 @@ curl -X GET http://localhost:8080/api/payment-methods/123e4567-e89b-12d3-a456-42
   "status": "NOT_FOUND"
 }
 ```
+
+---
+
+## Coupon APIs
+
+### Overview
+Quản lý mã giảm giá với các thao tác lấy danh sách mã giảm giá hợp lệ cho người dùng. Yêu cầu authentication để truy cập.
+
+---
+
+## 1. Get Valid Coupons for User
+
+### Endpoint
+`GET /api/coupons/valid`
+
+### Mục đích
+Lấy danh sách tất cả mã giảm giá hợp lệ cho người dùng đã đăng nhập, bao gồm thông tin về số lần sử dụng còn lại và khả năng áp dụng cho giỏ hàng hiện tại.
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/coupons/valid \
+  -H "Cookie: JSESSIONID=ABC123..."
+```
+
+### Success Response (200 OK)
+```json
+[
+  {
+    "code": "SAVE10",
+    "discountValue": 10.00,
+    "discountType": "PERCENT",
+    "minOrderValue": 100.00,
+    "maxDiscount": 50.00,
+    "scope": "ORDER",
+    "startDate": "2026-05-01T00:00:00",
+    "expiryDate": "2026-05-31T23:59:59",
+    "remainingUsage": 2,
+    "applicableToCurrentCart": true
+  },
+  {
+    "code": "FREESHIP",
+    "discountValue": 25.00,
+    "discountType": "FIXED",
+    "minOrderValue": 0.00,
+    "maxDiscount": null,
+    "scope": "SHIPPING",
+    "startDate": "2026-05-01T00:00:00",
+    "expiryDate": "2026-05-31T23:59:59",
+    "remainingUsage": 1,
+    "applicableToCurrentCart": true
+  }
+]
+```
+
+### Response Fields
+- `code`: Mã giảm giá
+- `discountValue`: Giá trị giảm giá
+- `discountType`: Loại giảm giá (`FIXED` hoặc `PERCENT`)
+- `minOrderValue`: Giá trị đơn hàng tối thiểu để áp dụng
+- `maxDiscount`: Giảm giá tối đa (cho loại PERCENT)
+- `scope`: Phạm vi áp dụng (`ORDER` hoặc `SHIPPING`)
+- `startDate`: Thời gian bắt đầu hiệu lực
+- `expiryDate`: Thời gian hết hạn
+- `remainingUsage`: Số lần sử dụng còn lại của user
+- `applicableToCurrentCart`: Có thể áp dụng cho giỏ hàng hiện tại không
+
+### Notes
+- Chỉ trả về các coupon đang active và trong khoảng thời gian hiệu lực
+- `applicableToCurrentCart` được tính toán tự động dựa trên tổng giá trị giỏ hàng hiện tại của user
+- `remainingUsage` được tính bằng `usagePerUser - số lần đã sử dụng`
+- Chỉ trả về các coupon có `remainingUsage > 0`
 
 ---
 
