@@ -458,6 +458,35 @@ curl -X DELETE http://localhost:8080/api/cart \
 
 ---
 
+## 5. Get Cart Total Amount
+
+### Endpoint
+`GET /api/cart/total`
+
+### Mục đích
+Lấy tổng số tiền của tất cả sản phẩm trong giỏ hàng của người dùng đã đăng nhập
+
+### Authentication
+Yêu cầu session hợp lệ (đã đăng nhập)
+
+### Endpoint Demo
+```bash
+curl -X GET http://localhost:8080/api/cart/total \
+  -H "Cookie: JSESSIONID=ABC123..."
+```
+
+### Success Response (200 OK)
+```json
+125.99
+```
+
+### Notes
+- Trả về tổng số tiền (giá sản phẩm × số lượng) của tất cả sản phẩm trong giỏ
+- Nếu giỏ hàng trống, trả về `0.00`
+- Sử dụng `BigDecimal` để đảm bảo tính chính xác của số tiền
+
+---
+
 ## Address APIs
 
 ### Overview

@@ -130,4 +130,15 @@ public interface CartService {
      * @return Total quantity of all items in the cart
      */
     long getTotalCartQuantity(UUID userId);
+
+    /**
+     * Calculates the total amount of all products in the user's cart.
+     *
+     * <p>This method calculates the sum of (product price × quantity) for all items
+     * in the user's shopping cart. Returns 0.00 if the cart is empty.</p>
+     *
+     * @param userId The UUID of the user
+     * @return Total amount of all products in the cart
+     */
+    java.math.BigDecimal getCartTotalAmount(UUID userId);
 }

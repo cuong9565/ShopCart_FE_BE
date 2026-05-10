@@ -171,6 +171,21 @@ public class CartServiceImpl implements CartService {
         return cartItemRepository.getTotalQuantityByUserId(userId);
     }
     
+    @Override
+    @Transactional(readOnly = true)
+    public java.math.BigDecimal getCartTotalAmount(UUID userId) {
+        List<CartItem> cartItems = cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId);
+        
+        if (cartItems.isEmpty()) {
+            return java.math.BigDecimal.ZERO;
+        }
+        
+        return cartItems.stream()
+                .map(cartItem -> cartItem.getProduct().getPrice()
+                        .multiply(java.math.BigDecimal.valueOf(cartItem.getQuantity())))
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+    }
+    
     /**
      * Converts a CartItem entity to CartItemResponseDTO.
      *

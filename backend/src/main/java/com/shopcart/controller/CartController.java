@@ -123,4 +123,21 @@ public class CartController {
         boolean removed = cartService.removeProductFromCart(userId, request.getProductId());
         return removed ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
+    
+    /**
+     * Retrieves the total amount of all products in the authenticated user's cart.
+     *
+     * <p>Returns the calculated sum of (product price × quantity) for all items
+     * in the user's shopping cart. Returns 0.00 if the cart is empty.</p>
+     *
+     * @param userDetails The authenticated user details
+     * @return Response containing the total cart amount
+     */
+    @GetMapping("/total")
+    public ResponseEntity<java.math.BigDecimal> getCartTotalAmount(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        UUID userId = userDetails.getId();
+        java.math.BigDecimal totalAmount = cartService.getCartTotalAmount(userId);
+        return ResponseEntity.ok(totalAmount);
+    }
 }
