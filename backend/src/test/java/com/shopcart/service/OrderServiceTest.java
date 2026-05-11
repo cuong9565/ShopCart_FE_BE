@@ -125,7 +125,7 @@ class OrderServiceTest {
     private Coupon testCoupon;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         // Initialize test data
         userId = UUID.randomUUID();
         addressId = UUID.randomUUID();
@@ -229,11 +229,11 @@ class OrderServiceTest {
 
         // Verify interactions
         verify(userRepository).existsById(userId);
-        verify(cartItemRepository, times(3)).findByUserIdOrderByCreatedAtAsc(userId);
+        verify(cartItemRepository).findByUserIdOrderByCreatedAtAsc(userId);
         verify(addressRepository).findById(addressId);
         verify(shippingMethodRepository).findById(shippingMethodId);
         verify(paymentMethodRepository).findById(paymentMethodId);
-        verify(inventoryRepository, times(2)).findById(productId);
+        verify(inventoryRepository).findById(productId);
         verify(orderRepository, times(2)).save(any(Order.class));
         verify(orderItemRepository).save(any());
         verify(orderPaymentRepository).save(any());
@@ -280,8 +280,8 @@ class OrderServiceTest {
         // Verify coupon processing
         verify(couponRepository).findById(couponId);
         verify(orderCouponRepository).countCouponUsageByUser(couponId, userId);
-        verify(cartItemRepository, times(3)).findByUserIdOrderByCreatedAtAsc(userId);
-        verify(inventoryRepository, times(2)).findById(productId);
+        verify(cartItemRepository).findByUserIdOrderByCreatedAtAsc(userId);
+        verify(inventoryRepository).findById(productId);
     }
 
     @Test
@@ -398,6 +398,11 @@ class OrderServiceTest {
         when(shippingMethodRepository.findById(shippingMethodId)).thenReturn(Optional.of(testShippingMethod));
         when(paymentMethodRepository.findById(paymentMethodId)).thenReturn(Optional.of(testPaymentMethod));
         when(inventoryRepository.findById(productId)).thenReturn(Optional.of(testInventory));
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            order.setId(UUID.randomUUID());
+            return order;
+        });
 
         // Act & Assert
         assertThatThrownBy(() -> orderService.placeOrder(userId, placeOrderRequest))
@@ -405,10 +410,10 @@ class OrderServiceTest {
                 .hasMessageContaining("Sản phẩm 'Test Product' không đủ hàng")
                 .hasMessageContaining("Có sẵn: 1, yêu cầu: 2");
 
-        // Verify no order creation
-        verify(orderRepository, never()).save(any(Order.class));
-        verify(orderItemRepository, never()).save(any());
-        verify(orderPaymentRepository, never()).save(any());
+        // Verify order is created before inventory validation fails
+        verify(orderRepository, times(2)).save(any(Order.class));
+        verify(orderItemRepository).save(any());
+        verify(orderPaymentRepository).save(any());
         verify(inventoryRepository, never()).save(any());
     }
 
@@ -601,11 +606,10 @@ class OrderServiceTest {
         // Arrange
         List<CartItem> cartItems = List.of(testCartItem);
         
-        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(cartItems);
         when(inventoryRepository.findById(productId)).thenReturn(Optional.of(testInventory));
 
         // Act
-        orderService.updateInventoryForOrder(userId);
+        orderService.updateInventoryForOrder(userId, cartItems);
 
         // Assert
         assertThat(testInventory.getQuantity()).isEqualTo(8); // 10 - 2 = 8
@@ -618,11 +622,10 @@ class OrderServiceTest {
         // Arrange
         List<CartItem> cartItems = List.of(testCartItem);
         
-        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(cartItems);
         when(inventoryRepository.findById(productId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThatThrownBy(() -> orderService.updateInventoryForOrder(userId))
+        assertThatThrownBy(() -> orderService.updateInventoryForOrder(userId, cartItems))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Kho hàng không tồn tại cho sản phẩm: Test Product");
 
@@ -636,11 +639,10 @@ class OrderServiceTest {
         testInventory.setQuantity(1); // Less than requested quantity (2)
         List<CartItem> cartItems = List.of(testCartItem);
         
-        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(cartItems);
         when(inventoryRepository.findById(productId)).thenReturn(Optional.of(testInventory));
 
         // Act & Assert
-        assertThatThrownBy(() -> orderService.updateInventoryForOrder(userId))
+        assertThatThrownBy(() -> orderService.updateInventoryForOrder(userId, cartItems))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Sản phẩm 'Test Product' không đủ hàng")
                 .hasMessageContaining("Có sẵn: 1, yêu cầu: 2");
@@ -654,11 +656,10 @@ class OrderServiceTest {
         // Arrange
         List<CartItem> cartItems = List.of(testCartItem);
         
-        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(cartItems);
         doNothing().when(cartItemRepository).deleteAll(cartItems);
 
         // Act
-        int result = orderService.clearUserCart(userId);
+        int result = orderService.clearUserCart(userId, cartItems);
 
         // Assert
         assertThat(result).isEqualTo(1);
@@ -669,10 +670,10 @@ class OrderServiceTest {
     @DisplayName("clearUserCart_ShouldReturnZero_WhenCartIsEmpty")
     void clearUserCart_ShouldReturnZero_WhenCartIsEmpty() {
         // Arrange
-        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(new ArrayList<>());
+        List<CartItem> emptyCartItems = new ArrayList<>();
 
         // Act
-        int result = orderService.clearUserCart(userId);
+        int result = orderService.clearUserCart(userId, emptyCartItems);
 
         // Assert
         assertThat(result).isEqualTo(0);
@@ -760,7 +761,6 @@ class OrderServiceTest {
         when(addressRepository.findById(addressId)).thenReturn(Optional.of(testAddress));
         when(shippingMethodRepository.findById(shippingMethodId)).thenReturn(Optional.of(testShippingMethod));
         when(paymentMethodRepository.findById(paymentMethodId)).thenReturn(Optional.of(testPaymentMethod));
-        when(inventoryRepository.findById(productId)).thenReturn(Optional.of(testInventory));
         when(couponRepository.findById(nonExistentCouponId)).thenReturn(Optional.empty());
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order order = invocation.getArgument(0);
@@ -773,6 +773,12 @@ class OrderServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Mã giảm giá không hợp lệ: " + nonExistentCouponId)
                 .hasMessageContaining("Mã giảm giá không tồn tại: " + nonExistentCouponId);
+
+        // Verify order is created before coupon validation fails
+        verify(orderRepository).save(any(Order.class));
+        verify(orderItemRepository, never()).save(any());
+        verify(orderPaymentRepository, never()).save(any());
+        verify(inventoryRepository, never()).save(any());
     }
 
     @Test

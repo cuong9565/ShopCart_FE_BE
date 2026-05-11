@@ -115,9 +115,6 @@ public class OrderServiceImpl implements OrderService {
             throw new IllegalArgumentException("Tổng giá trị đơn hàng phải lớn hơn 0");
         }
 
-        // ============== STEP 7: VALIDATE INVENTORY (CRITICAL) ==============
-        validateInventoryAvailability(cartItems);
-
         // ============== STEP 8: CREATE ORDER ==============
         // Calculate shipping fee first so we can set initial finalPrice
         BigDecimal shippingFee = shippingMethod.getBaseFee();
@@ -156,11 +153,11 @@ public class OrderServiceImpl implements OrderService {
         // ============== STEP 13: CREATE ORDER PAYMENT RECORD ==============
         createOrderPayment(order, paymentMethod);
 
-        // ============== STEP 14: UPDATE INVENTORY ==============
-        updateInventoryForOrder(userId);
+        // ============== STEP 14: VALIDATE AND UPDATE INVENTORY ==============
+        updateInventoryForOrder(userId, cartItems);
 
         // ============== STEP 15: CLEAR USER CART ==============
-        clearUserCart(userId);
+        clearUserCart(userId, cartItems);
 
         // ============== STEP 16: RETURN RESPONSE ==============
         return buildOrderResponse(order, orderItemResponses, appliedCoupons, paymentMethod);
@@ -221,9 +218,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public void updateInventoryForOrder(UUID userId) {
-        List<CartItem> cartItems = cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId);
-        
+    public void updateInventoryForOrder(UUID userId, List<CartItem> cartItems) {
         for (CartItem cartItem : cartItems) {
             Inventory inventory = inventoryRepository.findById(cartItem.getProduct().getId()).orElse(null);
             if (inventory == null) {
@@ -245,8 +240,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public int clearUserCart(UUID userId) {
-        List<CartItem> cartItems = cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId);
+    public int clearUserCart(UUID userId, List<CartItem> cartItems) {
         int clearedItemCount = cartItems.size();
         
         if (clearedItemCount > 0) {
@@ -263,25 +257,6 @@ public class OrderServiceImpl implements OrderService {
         return cartItems.stream()
                 .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    /**
-     * Validates that all products in the cart have sufficient inventory.
-     * This check happens BEFORE creating the order to prevent race conditions.
-     */
-    private void validateInventoryAvailability(List<CartItem> cartItems) {
-        for (CartItem cartItem : cartItems) {
-            Inventory inventory = inventoryRepository.findById(cartItem.getProduct().getId())
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Kho hàng không tồn tại cho sản phẩm: " + cartItem.getProduct().getName()));
-            
-            if (inventory.getQuantity() < cartItem.getQuantity()) {
-                throw new IllegalStateException(
-                        "Sản phẩm '" + cartItem.getProduct().getName() + 
-                        "' không đủ hàng. Có sẵn: " + inventory.getQuantity() + 
-                        ", yêu cầu: " + cartItem.getQuantity());
-            }
-        }
     }
 
     /**

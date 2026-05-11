@@ -120,7 +120,12 @@ const ProductDetailPage = () => {
                       onChange={(e) => {
                         const val = parseInt(e.target.value);
                         if (!isNaN(val)) {
-                          setQuantity(Math.min(product.stockQuantity, Math.max(1, val)));
+                          if (val > product.stockQuantity) {
+                            showToast(`Chỉ còn ${product.stockQuantity} sản phẩm`, 'error');
+                            setQuantity(product.stockQuantity);
+                          } else {
+                            setQuantity(Math.max(1, val));
+                          }
                         } else {
                           setQuantity(1);
                         }

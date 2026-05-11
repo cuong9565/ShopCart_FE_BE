@@ -5,6 +5,7 @@ import { paymentService } from '../services/paymentService';
 import { couponService } from '../services/couponService';
 import { orderService } from '../services/orderService';
 import { showToast } from '../utils/toast';
+import { useAuth } from '../context/AuthContext';
 import type {
   Address,
   ShippingMethod,
@@ -35,6 +36,7 @@ export interface CheckoutFormErrors {
 const PHONE_REGEX = /^(0|\+84)(3[2-9]|5[6-9]|7[06-9]|8[0-9]|9[0-9])[0-9]{7}$/;
 
 export const useCheckout = () => {
+  const { user } = useAuth();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -44,13 +46,24 @@ export const useCheckout = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<CheckoutFormData>({
-    shippingFullName: '',
-    shippingPhone: '',
+    shippingFullName: user?.fullName || '',
+    shippingPhone: user?.phone || '',
     selectedAddressId: '',
     selectedShippingMethodId: '',
     selectedPaymentMethodId: '',
     selectedCouponCodes: [],
   });
+
+  // Pre-populate fields with logged-in user details once loaded
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        shippingFullName: prev.shippingFullName || user.fullName || '',
+        shippingPhone: prev.shippingPhone || user.phone || '',
+      }));
+    }
+  }, [user]);
 
   const [errors, setErrors] = useState<CheckoutFormErrors>({});
 

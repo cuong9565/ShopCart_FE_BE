@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -8,6 +9,62 @@ import {
   faPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import { useCart } from '../hooks/useCart';
+
+interface QuantityInputProps {
+  productId: string;
+  quantity: number;
+  updateQuantity: (productId: string, quantity: number) => Promise<boolean>;
+  loading: boolean;
+}
+
+const QuantityInput = ({ productId, quantity, updateQuantity, loading }: QuantityInputProps) => {
+  const [inputValue, setInputValue] = useState<string>(quantity.toString());
+
+  useEffect(() => {
+    setInputValue(quantity.toString());
+  }, [quantity]);
+
+  const handleCommit = (val: string) => {
+    const parsed = parseInt(val, 10);
+    if (isNaN(parsed) || parsed < 1) {
+      setInputValue(quantity.toString());
+    } else if (parsed !== quantity) {
+      updateQuantity(productId, parsed);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (/^\d*$/.test(val)) {
+      setInputValue(val);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleCommit(inputValue);
+      e.currentTarget.blur();
+    }
+  };
+
+  const handleBlur = () => {
+    handleCommit(inputValue);
+  };
+
+  return (
+    <input
+      type="text"
+      pattern="[0-9]*"
+      inputMode="numeric"
+      value={inputValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      disabled={loading}
+      className="w-12 text-center font-bold text-gray-800 text-sm focus:outline-none bg-transparent border-none p-0 selection:bg-primary/20"
+    />
+  );
+};
 
 const CartPage = () => {
   const { cart, updateQuantity, removeItem, total, loading } = useCart(true);
@@ -116,10 +173,13 @@ const CartPage = () => {
                         <FontAwesomeIcon icon={faMinus} className="text-xs" />
                       </button>
 
-                      <span
-                        data-testid="cart-item-qty"
-                        className="w-10 text-center font-bold text-gray-800 text-sm"
-                      >
+                      <QuantityInput
+                        productId={item.productId}
+                        quantity={item.quantity}
+                        updateQuantity={updateQuantity}
+                        loading={loading}
+                      />
+                      <span data-testid="cart-item-qty" className="sr-only">
                         {item.quantity}
                       </span>
 

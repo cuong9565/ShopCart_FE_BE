@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +53,7 @@ public class LoginController {
             session.setAttribute("userId", userDetails.getId());
             session.setAttribute("email", userDetails.getUsername());
             session.setAttribute("fullName", userDetails.getFullName());
+            session.setAttribute("phone", userDetails.getPhone());
             session.setAttribute("user", userDetails.getUser());
             session.setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
@@ -60,7 +62,9 @@ public class LoginController {
 
             LoginResponse response = new LoginResponse(
                 userDetails.getUsername(),
-                userDetails.getId()
+                userDetails.getId(),
+                userDetails.getFullName(),
+                userDetails.getPhone()
             );
             
             return ResponseEntity.ok(response);
@@ -68,10 +72,26 @@ public class LoginController {
         } catch (AuthenticationException e) {
             LoginResponse response = new LoginResponse(
                 null,
+                null,
+                null,
                 null
             );
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
+    }
+
+    @GetMapping("/check")
+    public ResponseEntity<?> checkAuthentication(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("userId") != null) {
+            return ResponseEntity.ok(new LoginResponse(
+                (String) session.getAttribute("email"),
+                (java.util.UUID) session.getAttribute("userId"),
+                (String) session.getAttribute("fullName"),
+                (String) session.getAttribute("phone")
+            ));
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
     }
     
     @PostMapping("/logout")
