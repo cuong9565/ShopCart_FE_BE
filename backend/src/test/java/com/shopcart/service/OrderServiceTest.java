@@ -1,14 +1,5 @@
 package com.shopcart.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,12 +7,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.shopcart.dto.OrderResponse;
@@ -678,5 +677,234 @@ class OrderServiceTest {
         // Assert
         assertThat(result).isEqualTo(0);
         verify(cartItemRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    @DisplayName("placeOrder_ShouldThrowException_WhenShippingMethodIsInactive")
+    void placeOrder_ShouldThrowException_WhenShippingMethodIsInactive() {
+        // Arrange
+        testShippingMethod.setIsActive(false); // Inactive shipping method
+        
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(testCartItem));
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(testAddress));
+        when(shippingMethodRepository.findById(shippingMethodId)).thenReturn(Optional.of(testShippingMethod));
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.placeOrder(userId, placeOrderRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Phương thức vận chuyển không hoạt động");
+
+        // Verify no order creation
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(orderItemRepository, never()).save(any());
+        verify(orderPaymentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("placeOrder_ShouldThrowException_WhenPaymentMethodIsInactive")
+    void placeOrder_ShouldThrowException_WhenPaymentMethodIsInactive() {
+        // Arrange
+        testPaymentMethod.setIsActive(false); // Inactive payment method
+        
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(testCartItem));
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(testAddress));
+        when(shippingMethodRepository.findById(shippingMethodId)).thenReturn(Optional.of(testShippingMethod));
+        when(paymentMethodRepository.findById(paymentMethodId)).thenReturn(Optional.of(testPaymentMethod));
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.placeOrder(userId, placeOrderRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Phương thức thanh toán không hoạt động");
+
+        // Verify no order creation
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(orderItemRepository, never()).save(any());
+        verify(orderPaymentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("placeOrder_ShouldThrowException_WhenSubtotalIsZero")
+    void placeOrder_ShouldThrowException_WhenSubtotalIsZero() {
+        // Arrange
+        testProduct.setPrice(BigDecimal.ZERO); // Product with zero price
+        
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(testCartItem));
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(testAddress));
+        when(shippingMethodRepository.findById(shippingMethodId)).thenReturn(Optional.of(testShippingMethod));
+        when(paymentMethodRepository.findById(paymentMethodId)).thenReturn(Optional.of(testPaymentMethod));
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.placeOrder(userId, placeOrderRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Tổng giá trị đơn hàng phải lớn hơn 0");
+
+        // Verify no order creation
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(orderItemRepository, never()).save(any());
+        verify(orderPaymentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("placeOrder_ShouldThrowException_WhenCouponNotFound")
+    void placeOrder_ShouldThrowException_WhenCouponNotFound() {
+        // Arrange
+        UUID nonExistentCouponId = UUID.randomUUID();
+        placeOrderRequest.setCouponIds(List.of(nonExistentCouponId));
+        List<CartItem> cartItems = List.of(testCartItem);
+        
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(cartItems);
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(testAddress));
+        when(shippingMethodRepository.findById(shippingMethodId)).thenReturn(Optional.of(testShippingMethod));
+        when(paymentMethodRepository.findById(paymentMethodId)).thenReturn(Optional.of(testPaymentMethod));
+        when(inventoryRepository.findById(productId)).thenReturn(Optional.of(testInventory));
+        when(couponRepository.findById(nonExistentCouponId)).thenReturn(Optional.empty());
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            order.setId(UUID.randomUUID());
+            return order;
+        });
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.placeOrder(userId, placeOrderRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Mã giảm giá không hợp lệ: " + nonExistentCouponId)
+                .hasMessageContaining("Mã giảm giá không tồn tại: " + nonExistentCouponId);
+    }
+
+    @Test
+    @DisplayName("placeOrder_ShouldCapTotalDiscount_WhenMultipleCouponsExceedSubtotal")
+    void placeOrder_ShouldCapTotalDiscount_WhenMultipleCouponsExceedSubtotal() {
+        // Arrange
+        UUID couponId2 = UUID.randomUUID();
+        Coupon testCoupon2 = new Coupon();
+        testCoupon2.setId(couponId2);
+        testCoupon2.setCode("TEST20");
+        testCoupon2.setDiscountValue(new BigDecimal("150.00")); // Large discount
+        testCoupon2.setDiscountType(Coupon.DiscountType.FIXED);
+        testCoupon2.setMinOrderValue(new BigDecimal("50.00"));
+        testCoupon2.setUsagePerUser(1);
+        testCoupon2.setStatus(Coupon.CouponStatus.ACTIVE);
+        testCoupon2.setStartDate(LocalDateTime.now().minusDays(1));
+        testCoupon2.setExpiryDate(LocalDateTime.now().plusDays(7));
+
+        placeOrderRequest.setCouponIds(List.of(couponId, couponId2));
+        List<CartItem> cartItems = List.of(testCartItem);
+        
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(cartItems);
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(testAddress));
+        when(shippingMethodRepository.findById(shippingMethodId)).thenReturn(Optional.of(testShippingMethod));
+        when(paymentMethodRepository.findById(paymentMethodId)).thenReturn(Optional.of(testPaymentMethod));
+        when(inventoryRepository.findById(productId)).thenReturn(Optional.of(testInventory));
+        when(couponRepository.findById(couponId)).thenReturn(Optional.of(testCoupon));
+        when(couponRepository.findById(couponId2)).thenReturn(Optional.of(testCoupon2));
+        when(orderCouponRepository.countCouponUsageByUser(couponId, userId)).thenReturn(0L);
+        when(orderCouponRepository.countCouponUsageByUser(couponId2, userId)).thenReturn(0L);
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            order.setId(UUID.randomUUID());
+            return order;
+        });
+        when(orderItemRepository.save(any())).thenReturn(new com.shopcart.entity.OrderItem());
+        when(orderPaymentRepository.save(any())).thenReturn(new OrderPayment());
+
+        // Act
+        OrderResponse result = orderService.placeOrder(userId, placeOrderRequest);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getPricingInfo().getSubtotal()).isEqualTo(new BigDecimal("200.00"));
+        assertThat(result.getPricingInfo().getShippingFee()).isEqualTo(new BigDecimal("10.00"));
+        // Total discount should be capped at subtotal (200), not 160 (10 + 150)
+        assertThat(result.getPricingInfo().getCouponDiscount()).isEqualTo(new BigDecimal("160.00"));
+        assertThat(result.getPricingInfo().getFinalPrice()).isEqualTo(new BigDecimal("50.00")); // 200 + 10 - 160 = 50
+        assertThat(result.getAppliedCoupons()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("placeOrder_ShouldProcessSuccessfully_WhenCouponIdsListIsNull")
+    void placeOrder_ShouldProcessSuccessfully_WhenCouponIdsListIsNull() {
+        // Arrange
+        placeOrderRequest.setCouponIds(null); // Null coupon list
+        List<CartItem> cartItems = List.of(testCartItem);
+        
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(cartItems);
+        when(addressRepository.findById(addressId)).thenReturn(Optional.of(testAddress));
+        when(shippingMethodRepository.findById(shippingMethodId)).thenReturn(Optional.of(testShippingMethod));
+        when(paymentMethodRepository.findById(paymentMethodId)).thenReturn(Optional.of(testPaymentMethod));
+        when(inventoryRepository.findById(productId)).thenReturn(Optional.of(testInventory));
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            order.setId(UUID.randomUUID());
+            return order;
+        });
+        when(orderItemRepository.save(any())).thenReturn(new com.shopcart.entity.OrderItem());
+        when(orderPaymentRepository.save(any())).thenReturn(new OrderPayment());
+
+        // Act
+        OrderResponse result = orderService.placeOrder(userId, placeOrderRequest);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getPricingInfo().getCouponDiscount()).isEqualTo(BigDecimal.ZERO);
+        assertThat(result.getAppliedCoupons()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("validateAndCalculateCouponDiscount_ShouldCalculatePercentageWithoutMaxDiscount_WhenMaxDiscountIsNull")
+    void validateAndCalculateCouponDiscount_ShouldCalculatePercentageWithoutMaxDiscount_WhenMaxDiscountIsNull() {
+        // Arrange
+        testCoupon.setDiscountType(Coupon.DiscountType.PERCENT);
+        testCoupon.setDiscountValue(new BigDecimal("15")); // 15%
+        testCoupon.setMaxDiscount(null); // No max discount
+        BigDecimal orderValue = new BigDecimal("200.00");
+        
+        when(orderCouponRepository.countCouponUsageByUser(couponId, userId)).thenReturn(0L);
+
+        // Act
+        BigDecimal result = orderService.validateAndCalculateCouponDiscount(testCoupon, userId, orderValue);
+
+        // Assert
+        assertThat(result).isEqualTo(new BigDecimal("30.00")); // 15% of 200 = 30 (no cap)
+        verify(orderCouponRepository).countCouponUsageByUser(couponId, userId);
+    }
+
+    @Test
+    @DisplayName("validateAndCalculateCouponDiscount_ShouldPass_WhenStartDateIsNull")
+    void validateAndCalculateCouponDiscount_ShouldPass_WhenStartDateIsNull() {
+        // Arrange
+        testCoupon.setStartDate(null); // No start date
+        BigDecimal orderValue = new BigDecimal("200.00");
+        
+        when(orderCouponRepository.countCouponUsageByUser(couponId, userId)).thenReturn(0L);
+
+        // Act
+        BigDecimal result = orderService.validateAndCalculateCouponDiscount(testCoupon, userId, orderValue);
+
+        // Assert
+        assertThat(result).isEqualTo(new BigDecimal("10.00"));
+        verify(orderCouponRepository).countCouponUsageByUser(couponId, userId);
+    }
+
+    @Test
+    @DisplayName("validateAndCalculateCouponDiscount_ShouldPass_WhenExpiryDateIsNull")
+    void validateAndCalculateCouponDiscount_ShouldPass_WhenExpiryDateIsNull() {
+        // Arrange
+        testCoupon.setExpiryDate(null); // No expiry date
+        BigDecimal orderValue = new BigDecimal("200.00");
+        
+        when(orderCouponRepository.countCouponUsageByUser(couponId, userId)).thenReturn(0L);
+
+        // Act
+        BigDecimal result = orderService.validateAndCalculateCouponDiscount(testCoupon, userId, orderValue);
+
+        // Assert
+        assertThat(result).isEqualTo(new BigDecimal("10.00"));
+        verify(orderCouponRepository).countCouponUsageByUser(couponId, userId);
     }
 }
