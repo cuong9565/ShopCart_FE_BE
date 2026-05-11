@@ -53,6 +53,7 @@ public class LoginController {
             session.setAttribute("userId", userDetails.getId());
             session.setAttribute("email", userDetails.getUsername());
             session.setAttribute("fullName", userDetails.getFullName());
+            session.setAttribute("phone", userDetails.getPhone());
             session.setAttribute("user", userDetails.getUser());
             session.setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
@@ -61,13 +62,17 @@ public class LoginController {
 
             LoginResponse response = new LoginResponse(
                 userDetails.getUsername(),
-                userDetails.getId()
+                userDetails.getId(),
+                userDetails.getFullName(),
+                userDetails.getPhone()
             );
             
             return ResponseEntity.ok(response);
             
         } catch (AuthenticationException e) {
             LoginResponse response = new LoginResponse(
+                null,
+                null,
                 null,
                 null
             );
@@ -81,7 +86,9 @@ public class LoginController {
         if (session != null && session.getAttribute("userId") != null) {
             return ResponseEntity.ok(new LoginResponse(
                 (String) session.getAttribute("email"),
-                (java.util.UUID) session.getAttribute("userId")
+                (java.util.UUID) session.getAttribute("userId"),
+                (String) session.getAttribute("fullName"),
+                (String) session.getAttribute("phone")
             ));
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
