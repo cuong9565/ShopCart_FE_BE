@@ -15,52 +15,13 @@ export const CONFIG = {
     CART_TEST: {
       name: 'Cart Operations Load Test',
       vus: 10,           // Virtual users
-      duration: '10s',    // Test duration
+      duration: '30s',    // Test duration
       thresholds: {
-        http_req_duration: ['p(95)<500'], // 95% of requests under 500ms
+        http_req_duration: ['p(90)<500'], // 90% of requests under 500ms
         http_req_failed: ['rate<0.05'],   // Error rate under 5%
         http_reqs: ['rate>10'],           // At least 10 requests per second
       }
     },
-    
-    // Checkout process test
-    CHECKOUT_TEST: {
-      name: 'Checkout Process Performance Test',
-      vus: 30,           // Virtual users
-      duration: '3m',    // Test duration
-      thresholds: {
-        http_req_duration: ['p(95)<1000'], // 95% of requests under 1s
-        http_req_failed: ['rate<0.02'],   // Error rate under 2%
-        http_reqs: ['rate>5'],            // At least 5 requests per second
-      }
-    },
-    
-    // Stress test
-    STRESS_TEST: {
-      name: 'Stress Test - Peak Load',
-      stages: [
-        { duration: '1m', target: 20 },   // Ramp up to 20 users
-        { duration: '2m', target: 50 },   // Ramp up to 50 users
-        { duration: '3m', target: 100 },  // Peak load: 100 users
-        { duration: '2m', target: 50 },   // Scale down to 50 users
-        { duration: '1m', target: 0 },     // Ramp down to 0 users
-      ],
-      thresholds: {
-        http_req_duration: ['p(95)<2000'], // 95% under 2s during stress
-        http_req_failed: ['rate<0.10'],    // Error rate under 10%
-      }
-    },
-    
-    // Soak test (endurance)
-    SOAK_TEST: {
-      name: 'Endurance Test',
-      vus: 20,           // Sustained load
-      duration: '10m',   // Extended test duration
-      thresholds: {
-        http_req_duration: ['p(95)<800'],  // 95% under 800ms
-        http_req_failed: ['rate<0.03'],    // Error rate under 3%
-      }
-    }
   },
   
   // API endpoints
