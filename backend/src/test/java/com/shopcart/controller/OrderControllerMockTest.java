@@ -54,9 +54,9 @@ import com.shopcart.service.OrderService;
  * @version 1.0
  * @since 2026-05-11
  */
-@DisplayName("Order Controller Unit Tests")
+@DisplayName("Order Controller Mock Tests")
 @ExtendWith(MockitoExtension.class)
-class OrderControllerUnitTest {
+class OrderControllerMockTest {
 
     @Mock
     private OrderService orderService;
