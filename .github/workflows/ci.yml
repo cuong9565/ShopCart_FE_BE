@@ -2,48 +2,54 @@ name: Complete CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master, feature/purchase ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, dev ]
 
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17
+        image: postgres:15
         env:
-          POSTGRES_DB: testdb
-          POSTGRES_PASSWORD: password
-        ports:
-          - 5432:5432
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shopcart_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
+        ports:
+          - 5432:5432
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup Java 25
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
-          java-version: '25'
-          distribution: 'oracle'
+          java-version: '21'
+          distribution: 'temurin'
           cache: maven
 
-      - name: Build and Run Backend Tests (JUnit 5 + Mockito)
+      - name: Run tests with coverage
         run: |
           cd backend
           mvn clean test jacoco:report
 
-      - name: Upload Backend Coverage Report
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: backend/target/surefire-reports/
+
+      - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: backend-coverage-report
+          name: coverage-report
           path: backend/target/site/jacoco/
-          retention-days: 14
 
   frontend-tests:
     runs-on: ubuntu-latest
