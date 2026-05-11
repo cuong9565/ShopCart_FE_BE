@@ -3,12 +3,24 @@ import { useProductDetail } from '../hooks/useProductDetail';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight, faCartPlus, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
+import { showToast } from '../utils/toast';
+import { useCart } from '../hooks/useCart';
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { product, loading, error } = useProductDetail(id);
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState<string | null>(null);
+  const { addToCart } = useCart();
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    if (quantity > product.stockQuantity) {
+      showToast('Số lượng vượt quá tồn kho', 'error');
+      return;
+    }
+    await addToCart(product.id, quantity);
+  };
 
   if (loading) {
     return (
@@ -83,7 +95,7 @@ const ProductDetailPage = () => {
                 {product.price.toLocaleString('vi-VN')}đ
               </span>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${product.stockQuantity > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {product.stockQuantity > 0 ? `Còn hàng` : 'Hết hàng'}
+                {product.stockQuantity > 0 ? `Còn hàng (Tồn kho: ${product.stockQuantity})` : 'Tạm hết hàng'}
               </span>
             </div>
 
@@ -94,25 +106,52 @@ const ProductDetailPage = () => {
             <div className="mt-auto border-t border-gray-100 pt-8">
               <div className="flex items-center gap-6 mb-6">
                 <span className="text-gray-700 font-medium">Số lượng:</span>
-                <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
-                  >
-                    <FontAwesomeIcon icon={faMinus} className="text-xs" />
-                  </button>
-                  <span className="w-12 text-center font-medium text-gray-900">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
-                    className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors disabled:opacity-50"
-                    disabled={quantity >= product.stockQuantity}
-                  >
-                    <FontAwesomeIcon icon={faPlus} className="text-xs" />
-                  </button>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden w-fit">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faMinus} className="text-xs" />
+                    </button>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val)) {
+                          if (val > product.stockQuantity) {
+                            showToast(`Chỉ còn ${product.stockQuantity} sản phẩm`, 'error');
+                            setQuantity(product.stockQuantity);
+                          } else {
+                            setQuantity(Math.max(1, val));
+                          }
+                        } else {
+                          setQuantity(1);
+                        }
+                      }}
+                      className="w-12 text-center font-medium text-gray-900 border-none focus:outline-none focus:ring-0"
+                      data-testid="quantity-input"
+                    />
+                    <button
+                      onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                      className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors disabled:opacity-50"
+                      disabled={quantity >= product.stockQuantity}
+                    >
+                      <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                    </button>
+                  </div>
+                  {product.stockQuantity > 0 && (
+                    <span className="text-xs text-gray-500">
+                      (Có sẵn {product.stockQuantity} sản phẩm)
+                    </span>
+                  )}
                 </div>
               </div>
 
               <button
+                onClick={handleAddToCart}
+                data-testid="add-to-cart-btn"
                 className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-3 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg shadow-primary/10"
                 disabled={product.stockQuantity === 0}
               >

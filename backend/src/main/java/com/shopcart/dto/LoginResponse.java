@@ -10,4 +10,6 @@ import lombok.Data;
 public class LoginResponse {
     private String email;
     private UUID userId;
+    private String fullName;
+    private String phone;
 }

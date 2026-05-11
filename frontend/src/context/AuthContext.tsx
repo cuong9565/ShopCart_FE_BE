@@ -53,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Logout error:', err);
     } finally {
       setUser(null);
+      window.location.href = '/';
     }
   };
 

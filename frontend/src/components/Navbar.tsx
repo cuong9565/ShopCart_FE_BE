@@ -4,11 +4,48 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 
+import axios from 'axios';
+
 const Navbar = () => {
   const { user, setShowLoginModal, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const fetchCartCount = async () => {
+    try {
+      const res = await axios.get('http://localhost:8080/api/cart', {
+        withCredentials: true,
+      });
+
+      const total = res.data.reduce(
+        (sum: number, item: any) => sum + item.quantity,
+        0
+      );
+
+      setCartCount(total);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchCartCount();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      fetchCartCount();
+    };
+
+    window.addEventListener('cartUpdated', handleCartUpdate);
+
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
+  }, []);  
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -39,12 +76,23 @@ const Navbar = () => {
       <div className="flex items-center space-x-6">
         {user ? (
           <>
-            <button className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer relative mr-6">
-              <FontAwesomeIcon icon={faShoppingCart} size="lg" />
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                0
-              </span>
-            </button>
+            <Link
+              to="/cart"
+              className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer relative mr-6"
+            >
+              <div className="relative">
+                <FontAwesomeIcon icon={faShoppingCart} size="lg" />
+
+                {cartCount > 0 && (
+                  <span
+                    data-testid="cart-badge"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                  >
+                    {cartCount}
+                  </span>
+                )}
+              </div>           
+            </Link>
 
             <div className="relative" ref={dropdownRef}>
               <button
@@ -79,6 +127,7 @@ const Navbar = () => {
         ) : (
           <button
             onClick={() => setShowLoginModal(true)}
+            data-testid="open-login-modal-btn"
             className="bg-primary hover:bg-primary-dark text-white transition-all font-semibold text-sm cursor-pointer py-1.5 px-5 rounded-md border border-transparent shadow-lg shadow-primary/10"
           >
             Đăng nhập

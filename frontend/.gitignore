@@ -25,3 +25,15 @@ dist-ssr
 
 # Environment variables
 .env
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Vitest Coverage
+coverage/
+.vitest/
+

@@ -5,7 +5,8 @@ import java.util.UUID;
 
 import com.shopcart.dto.AddToCartRequest;
 import com.shopcart.dto.CartItemResponseDTO;
-import com.shopcart.dto.UpdateCartRequest;
+import com.shopcart.dto.CartPricingRequest;
+import com.shopcart.dto.CartPricingResponse;
 
 /**
  * Service interface for shopping cart operations.
@@ -51,21 +52,7 @@ public interface CartService {
      * @throws IllegalArgumentException if product is not found, inactive, or insufficient inventory
      */
     CartItemResponseDTO addToCart(UUID userId, AddToCartRequest request);
-
-    /**
-     * Updates the quantity of a specific cart item.
-     *
-     * <p>This method modifies the quantity of an existing cart item.
-     * The quantity must be a positive integer.</p>
-     *
-     * @param userId The UUID of the user who owns the cart
-     * @param cartItemId The UUID of the cart item to update
-     * @param request The update request containing the new quantity
-     * @return The updated cart item
-     * @throws IllegalArgumentException if cart item not found, doesn't belong to user, or insufficient inventory
-     */
-    CartItemResponseDTO updateCartItemQuantity(UUID userId, UUID cartItemId, UpdateCartRequest request);
-
+    
     /**
      * Updates the quantity of a product in the user's cart.
      *
@@ -81,18 +68,6 @@ public interface CartService {
     CartItemResponseDTO updateProductQuantityFromCart(UUID userId, UUID productId, Integer quantity);
 
     /**
-     * Removes a specific item from the user's cart.
-     *
-     * <p>This method deletes a single cart item. If the cart item doesn't exist
-     * or doesn't belong to the user, no exception is thrown (idempotent operation).</p>
-     *
-     * @param userId The UUID of the user who owns the cart
-     * @param cartItemId The UUID of the cart item to remove
-     * @return true if the item was removed, false if not found
-     */
-    boolean removeFromCart(UUID userId, UUID cartItemId);
-
-    /**
      * Removes a product from the user's cart by product ID.
      *
      * <p>This method deletes the cart item for a specific product.
@@ -105,29 +80,33 @@ public interface CartService {
     boolean removeProductFromCart(UUID userId, UUID productId);
 
     /**
-     * Clears all items from the user's shopping cart.
+     * Calculates the total amount of all products in the user's cart.
      *
-     * <p>This method is typically called after successful order completion
-     * to empty the user's cart for a fresh start.</p>
-     *
-     * @param userId The UUID of the user whose cart to clear
-     * @return The number of cart items that were removed
-     */
-    int clearCart(UUID userId);
-
-    /**
-     * Gets the total number of distinct products in the user's cart.
+     * <p>This method calculates the sum of (product price × quantity) for all items
+     * in the user's shopping cart. Returns 0.00 if the cart is empty.</p>
      *
      * @param userId The UUID of the user
-     * @return Number of distinct products in the cart
+     * @return Total amount of all products in the cart
      */
-    long getCartItemCount(UUID userId);
+    java.math.BigDecimal getCartTotalAmount(UUID userId);
 
     /**
-     * Gets the total quantity of all items in the user's cart.
+     * Calculates comprehensive pricing for the user's cart including discounts and shipping.
+     *
+     * <p>This method provides detailed pricing calculation including:
+     * <ul>
+     *   <li>Total product amount before discounts</li>
+     *   <li>Applied coupon discounts (order and shipping)</li>
+     *   <li>Shipping fees and discounts</li>
+     *   <li>Final total amount</li>
+     *   <li>Estimated delivery timeframes</li>
+     * </ul>
+     * </p>
      *
      * @param userId The UUID of the user
-     * @return Total quantity of all items in the cart
+     * @param request The pricing request containing coupons and shipping method
+     * @return Comprehensive pricing response with all calculated values
+     * @throws IllegalArgumentException if user not found, invalid coupons, or shipping method not found
      */
-    long getTotalCartQuantity(UUID userId);
+    CartPricingResponse calculateCartPricing(UUID userId, CartPricingRequest request);
 }
