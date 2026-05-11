@@ -22,7 +22,10 @@ export interface Product {
 export interface User {
   email: string;
   userId: string;
+  fullName?: string;
+  phone?: string;
 }
+
 
 export interface CartItem {
   productId: string;
