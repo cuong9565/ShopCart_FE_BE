@@ -1,12 +1,9 @@
 package com.shopcart.controller;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -72,48 +69,5 @@ public class OrderController {
         OrderResponse orderResponse = orderService.placeOrder(userId, request);
         
         return ResponseEntity.ok(orderResponse);
-    }
-
-    /**
-     * Retrieves specific order details for the authenticated user.
-     *
-     * <p>This endpoint returns complete order information including items,
-     * pricing, shipping details, and payment status. Users can only view
-     * their own orders.</p>
-     *
-     * @param userDetails The authenticated user details
-     * @param orderId The UUID of the order to retrieve
-     * @return Complete order response with all details
-     * @throws IllegalArgumentException if order not found or doesn't belong to user
-     */
-    @GetMapping("/{orderId}")
-    public ResponseEntity<OrderResponse> getOrder(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable UUID orderId) {
-        
-        UUID userId = userDetails.getId();
-        OrderResponse orderResponse = orderService.getOrderById(orderId, userId);
-        
-        return ResponseEntity.ok(orderResponse);
-    }
-
-    /**
-     * Retrieves all orders for the authenticated user.
-     *
-     * <p>This endpoint returns the user's complete order history,
-     * ordered by creation date (newest first). Each order includes
-     * full details including items, pricing, and status.</p>
-     *
-     * @param userDetails The authenticated user details
-     * @return List of order responses for the user
-     */
-    @GetMapping
-    public ResponseEntity<List<OrderResponse>> getUserOrders(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
-        UUID userId = userDetails.getId();
-        List<OrderResponse> orders = orderService.getUserOrders(userId);
-        
-        return ResponseEntity.ok(orders);
     }
 }

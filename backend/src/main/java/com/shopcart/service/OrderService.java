@@ -1,6 +1,5 @@
 package com.shopcart.service;
 
-import java.util.List;
 import java.util.UUID;
 
 import com.shopcart.dto.OrderResponse;
@@ -49,30 +48,7 @@ public interface OrderService {
      * @throws com.shopcart.exception.CouponException if coupon validation fails
      */
     OrderResponse placeOrder(UUID userId, PlaceOrderRequest request);
-
-    /**
-     * Retrieves order details by order ID.
-     *
-     * <p>This method returns complete order information including items,
-     * pricing, shipping details, and payment status.</p>
-     *
-     * @param orderId The UUID of the order to retrieve
-     * @param userId The UUID of the user requesting the order (for authorization)
-     * @return Complete order response with all details
-     * @throws IllegalArgumentException if order not found or doesn't belong to user
-     */
-    OrderResponse getOrderById(UUID orderId, UUID userId);
-
-    /**
-     * Retrieves all orders for a specific user.
-     *
-     * <p>Returns user's order history ordered by creation date (newest first).</p>
-     *
-     * @param userId The UUID of the user whose orders to retrieve
-     * @return List of order responses for the user
-     */
-    List<OrderResponse> getUserOrders(UUID userId);
-
+    
     /**
      * Validates a coupon for a specific user and order value.
      *

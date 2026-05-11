@@ -1,6 +1,5 @@
 package com.shopcart.repository;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,12 +19,5 @@ import com.shopcart.entity.OrderPayment;
  */
 @Repository
 public interface OrderPaymentRepository extends JpaRepository<OrderPayment, UUID> {
-
-    /**
-     * Finds payment by order ID.
-     *
-     * @param orderId The order ID to search for
-     * @return Optional containing the payment if found
-     */
-    Optional<OrderPayment> findByOrderId(UUID orderId);
+    // No additional methods needed, JpaRepository provides all standard CRUD operations
 }

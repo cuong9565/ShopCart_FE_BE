@@ -14,7 +14,6 @@ import com.shopcart.dto.AddToCartRequest;
 import com.shopcart.dto.CartItemResponseDTO;
 import com.shopcart.dto.CartPricingRequest;
 import com.shopcart.dto.CartPricingResponse;
-import com.shopcart.dto.UpdateCartRequest;
 import com.shopcart.entity.CartItem;
 import com.shopcart.entity.Coupon;
 import com.shopcart.entity.Inventory;
@@ -109,27 +108,6 @@ public class CartServiceImpl implements CartService {
             return convertToResponseDTO(savedCartItem);
         }
     }
-    
-    @Override
-    public CartItemResponseDTO updateCartItemQuantity(UUID userId, UUID cartItemId, UpdateCartRequest request) {
-        CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new IllegalArgumentException("Cart item not found with id: " + cartItemId));
-        
-        // Validate cart item belongs to user
-        if (!cartItem.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Cart item does not belong to user");
-        }
-        
-        // Check inventory
-        Inventory inventory = inventoryRepository.findByProductId(cartItem.getProduct().getId());
-        if (inventory == null || inventory.getQuantity() < request.getQuantity()) {
-            throw new IllegalArgumentException("Insufficient inventory for product: " + cartItem.getProduct().getName());
-        }
-        
-        cartItem.setQuantity(request.getQuantity());
-        CartItem updatedCartItem = cartItemRepository.save(cartItem);
-        return convertToResponseDTO(updatedCartItem);
-    }
 
     @Override
     public CartItemResponseDTO updateProductQuantityFromCart(UUID userId, UUID productId, Integer quantity) {
@@ -150,39 +128,9 @@ public class CartServiceImpl implements CartService {
     }
     
     @Override
-    public boolean removeFromCart(UUID userId, UUID cartItemId) {
-        CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElse(null);
-        
-        if (cartItem == null || !cartItem.getUser().getId().equals(userId)) {
-            return false;
-        }
-        
-        cartItemRepository.delete(cartItem);
-        return true;
-    }
-    
-    @Override
     public boolean removeProductFromCart(UUID userId, UUID productId) {
         int deletedRows = cartItemRepository.deleteByUserIdAndProductId(userId, productId);
         return deletedRows > 0;
-    }
-    
-    @Override
-    public int clearCart(UUID userId) {
-        return cartItemRepository.deleteByUserId(userId);
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public long getCartItemCount(UUID userId) {
-        return cartItemRepository.countByUserId(userId);
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public long getTotalCartQuantity(UUID userId) {
-        return cartItemRepository.getTotalQuantityByUserId(userId);
     }
     
     @Override

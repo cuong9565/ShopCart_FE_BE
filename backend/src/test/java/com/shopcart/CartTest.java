@@ -1,24 +1,27 @@
 package com.shopcart;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.shopcart.dto.AddToCartRequest;
 import com.shopcart.dto.CartItemResponseDTO;
-import com.shopcart.dto.UpdateCartRequest;
 import com.shopcart.entity.CartItem;
 import com.shopcart.entity.Inventory;
 import com.shopcart.entity.Product;
@@ -141,59 +144,5 @@ class CartTest {
         assertThrows(IllegalArgumentException.class, () -> {
             cartService.addToCart(userId, request);
         });
-    }
-
-    // --- b) Test cho removeFromCart() và updateQuantity() ---
-
-    @Test
-    @DisplayName("TC5: Cập nhật số lượng sản phẩm thành công")
-    void testUpdateQuantity_Success() {
-        UUID cartItemId = UUID.randomUUID();
-        UpdateCartRequest request = new UpdateCartRequest();
-        request.setQuantity(5);
-
-        CartItem existingItem = new CartItem(mockUser, mockProduct, 1);
-        existingItem.setId(cartItemId);
-
-        when(cartItemRepository.findById(cartItemId)).thenReturn(Optional.of(existingItem));
-        when(inventoryRepository.findByProductId(productId)).thenReturn(mockInventory);
-        when(cartItemRepository.save(any(CartItem.class))).thenAnswer(i -> i.getArguments()[0]);
-
-        CartItemResponseDTO result = cartService.updateCartItemQuantity(userId, cartItemId, request);
-
-        assertEquals(5, result.getQuantity());
-        verify(cartItemRepository).save(existingItem);
-    }
-
-    @Test
-    @DisplayName("TC6: Xóa sản phẩm khỏi giỏ hàng")
-    void testRemoveFromCart() {
-        UUID cartItemId = UUID.randomUUID();
-        CartItem existingItem = new CartItem(mockUser, mockProduct, 1);
-        existingItem.setId(cartItemId);
-
-        when(cartItemRepository.findById(cartItemId)).thenReturn(Optional.of(existingItem));
-
-        boolean removed = cartService.removeFromCart(userId, cartItemId);
-
-        assertTrue(removed);
-        verify(cartItemRepository, times(1)).delete(existingItem);
-    }
-
-    @Test
-    @DisplayName("TC7: Xóa sản phẩm không thuộc về user (Security check)")
-    void testRemoveFromCart_NotOwner() {
-        UUID cartItemId = UUID.randomUUID();
-        User differentUser = new User();
-        differentUser.setId(UUID.randomUUID()); // ID khác với userId hiện tại
-
-        CartItem existingItem = new CartItem(differentUser, mockProduct, 1);
-
-        when(cartItemRepository.findById(cartItemId)).thenReturn(Optional.of(existingItem));
-
-        boolean removed = cartService.removeFromCart(userId, cartItemId);
-
-        assertFalse(removed);
-        verify(cartItemRepository, never()).delete(any());
     }
 }

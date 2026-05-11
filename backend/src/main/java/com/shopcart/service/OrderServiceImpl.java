@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +21,6 @@ import com.shopcart.entity.OrderCoupon;
 import com.shopcart.entity.OrderItem;
 import com.shopcart.entity.OrderPayment;
 import com.shopcart.entity.PaymentMethod;
-import com.shopcart.entity.Product;
 import com.shopcart.entity.ShippingMethod;
 import com.shopcart.exception.CouponException;
 import com.shopcart.repository.AddressRepository;
@@ -34,7 +32,6 @@ import com.shopcart.repository.OrderItemRepository;
 import com.shopcart.repository.OrderPaymentRepository;
 import com.shopcart.repository.OrderRepository;
 import com.shopcart.repository.PaymentMethodRepository;
-import com.shopcart.repository.ProductRepository;
 import com.shopcart.repository.ShippingMethodRepository;
 import com.shopcart.repository.UserRepository;
 
@@ -62,7 +59,6 @@ public class OrderServiceImpl implements OrderService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
-    private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
     private final CouponRepository couponRepository;
     private final ShippingMethodRepository shippingMethodRepository;
@@ -168,61 +164,6 @@ public class OrderServiceImpl implements OrderService {
 
         // ============== STEP 16: RETURN RESPONSE ==============
         return buildOrderResponse(order, orderItemResponses, appliedCoupons, paymentMethod);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public OrderResponse getOrderById(UUID orderId, UUID userId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Đơn hàng không tồn tại với id: " + orderId));
-        
-        if (!order.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("Đơn hàng không thuộc về người dùng này");
-        }
-
-        // Get order items
-        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
-        List<OrderResponse.OrderItemResponse> itemResponses = orderItems.stream()
-                .map(this::convertToOrderItemResponse)
-                .collect(Collectors.toList());
-
-        // Get order coupons - optimized query instead of findAll().stream().filter()
-        List<OrderCoupon> orderCoupons = orderCouponRepository.findByOrderId(orderId);
-        List<OrderResponse.CouponInfo> couponInfos = orderCoupons.stream()
-                .map(this::convertToCouponInfo)
-                .collect(Collectors.toList());
-
-        // Get payment method
-        OrderPayment orderPayment = orderPaymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Thông tin thanh toán không tồn tại cho đơn hàng"));
-        
-        PaymentMethod paymentMethod = paymentMethodRepository.findById(orderPayment.getPaymentMethodId())
-                .orElse(null);
-
-        return buildOrderResponse(order, itemResponses, couponInfos, paymentMethod);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<OrderResponse> getUserOrders(UUID userId) {
-        // Verify user exists
-        if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("Người dùng không tồn tại với id: " + userId);
-        }
-        
-        List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        
-        return orders.stream()
-                .map(order -> {
-                    try {
-                        return getOrderById(order.getId(), userId);
-                    } catch (Exception e) {
-                        // Log error and skip orders that can't be fully loaded
-                        return null;
-                    }
-                })
-                .filter(java.util.Objects::nonNull)
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -505,35 +446,6 @@ public class OrderServiceImpl implements OrderService {
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
                 .appliedCoupons(coupons)
-                .build();
-    }
-
-    private OrderResponse.OrderItemResponse convertToOrderItemResponse(OrderItem orderItem) {
-        Product product = productRepository.findById(orderItem.getProductId())
-                .orElse(null);
-        
-        BigDecimal totalPrice = orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity()));
-        String productName = product != null ? product.getName() : "Sản phẩm không xác định (ID: " + orderItem.getProductId() + ")";
-        
-        return OrderResponse.OrderItemResponse.builder()
-                .productId(orderItem.getProductId())
-                .productName(productName)
-                .quantity(orderItem.getQuantity())
-                .price(orderItem.getPrice())
-                .totalPrice(totalPrice)
-                .build();
-    }
-
-    private OrderResponse.CouponInfo convertToCouponInfo(OrderCoupon orderCoupon) {
-        Coupon coupon = couponRepository.findById(orderCoupon.getCouponId())
-                .orElse(null);
-        
-        String couponCode = coupon != null ? coupon.getCode() : "Mã không xác định";
-        
-        return OrderResponse.CouponInfo.builder()
-                .couponId(orderCoupon.getCouponId())
-                .code(couponCode)
-                .discountAmount(orderCoupon.getAppliedAmount())
                 .build();
     }
 }
