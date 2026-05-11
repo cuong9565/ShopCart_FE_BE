@@ -27,6 +27,15 @@ const ProductCard = ({ product }: { product: Product }) => {
           {product.name}
         </h3>
 
+        {/* STOCK QUANTITY */}
+        <p className="text-xs text-gray-500 mb-3">
+          {product.stockQuantity > 0 ? (
+            <span>Còn lại: <strong className="text-gray-700">{product.stockQuantity}</strong></span>
+          ) : (
+            <span className="text-red-500 font-semibold">Tạm hết hàng</span>
+          )}
+        </p>
+
         <div className="mt-auto flex items-center justify-between">
           
           {/* PRICE */}
@@ -38,9 +47,16 @@ const ProductCard = ({ product }: { product: Product }) => {
           <button
             onClick={(e) => {
               e.preventDefault(); // không redirect link
-              addToCart(product.id, 1);
+              if (product.stockQuantity > 0) {
+                addToCart(product.id, 1);
+              }
             }}
-            className="p-3 cursor-pointer text-gray-400 hover:text-blue-600 transition-colors"
+            disabled={product.stockQuantity <= 0}
+            className={`p-3 transition-colors ${
+              product.stockQuantity > 0
+                ? 'cursor-pointer text-gray-400 hover:text-blue-600'
+                : 'text-gray-300 cursor-not-allowed'
+            }`}
           >
             <FontAwesomeIcon icon={faCartPlus} />
           </button>
