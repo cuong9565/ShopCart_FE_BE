@@ -70,7 +70,7 @@ class OrderControllerUnitTest {
     private OrderResponse mockResponse;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         // Setup test data
         testUserId = UUID.randomUUID();
         
@@ -465,9 +465,10 @@ class OrderControllerUnitTest {
     void testPlaceOrder_NullUserDetails() {
         // Act & Assert - This should work with null user details if the controller handles it
         // but based on the implementation, it will likely throw NullPointerException
-        assertThrows(NullPointerException.class, () -> {
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> {
             orderController.placeOrder(null, validRequest);
         });
+        assertNotNull(exception);
     }
 
     @Test
