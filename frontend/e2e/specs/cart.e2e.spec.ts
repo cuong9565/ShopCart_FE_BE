@@ -94,7 +94,7 @@ test.describe('Cart E2E Tests', () => {
           if (currentQtyInCart + quantity > stock) {
             await route.fulfill({
               status: 400,
-              json: { message: 'Insufficient inventory' }
+              json: { message: 'Số lượng vượt quá tồn kho' }
             });
             return;
           }
@@ -128,7 +128,7 @@ test.describe('Cart E2E Tests', () => {
         if (quantity > stock) {
           await route.fulfill({
             status: 400,
-            json: { message: 'Insufficient inventory' }
+            json: { message: 'Số lượng vượt quá tồn kho' }
           });
           return;
         }
@@ -220,17 +220,17 @@ test.describe('Cart E2E Tests', () => {
     // Verify 1 item is listed
     await expect(cartPage.cartItems).toHaveCount(1);
     await expect(cartPage.cartItems.nth(0).locator('[data-testid="cart-item-qty"]')).toHaveText('2');
-    await expect(cartPage.totalPrice).toHaveText('3.000.000₫');
+    await expect(cartPage.totalPrice).toHaveText('3.000.000đ');
 
     // 4. Increase quantity to 3
     await cartPage.increaseQuantity(0);
     await expect(cartPage.cartItems.nth(0).locator('[data-testid="cart-item-qty"]')).toHaveText('3');
-    await expect(cartPage.totalPrice).toHaveText('4.500.000₫');
+    await expect(cartPage.totalPrice).toHaveText('4.500.000đ');
 
     // 5. Decrease quantity back to 2
     await cartPage.decreaseQuantity(0);
     await expect(cartPage.cartItems.nth(0).locator('[data-testid="cart-item-qty"]')).toHaveText('2');
-    await expect(cartPage.totalPrice).toHaveText('3.000.000₫');
+    await expect(cartPage.totalPrice).toHaveText('3.000.000đ');
 
     // 6. Delete item from cart
     await cartPage.removeItem(0);
