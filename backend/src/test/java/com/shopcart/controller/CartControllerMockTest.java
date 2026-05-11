@@ -45,7 +45,7 @@ class CartControllerMockTest {
     private CartItemResponseDTO cartItemResponse;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         userId = UUID.randomUUID();
         productId = UUID.randomUUID();
 
@@ -162,6 +162,7 @@ class CartControllerMockTest {
     @Test
     @DisplayName("TC08 - Handle Null User (Edge Case)")
     void testGetCartItems_NullUser() {
-        assertThrows(NullPointerException.class, () -> cartController.getCartItems(null));
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> cartController.getCartItems(null));
+        assertNotNull(exception);
     }
 }
