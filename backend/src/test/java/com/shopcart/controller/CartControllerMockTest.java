@@ -29,7 +29,7 @@ import com.shopcart.dto.UpdateCartRequest;
 import com.shopcart.security.CustomUserDetails;
 import com.shopcart.service.CartService;
 
-@DisplayName("Cart Controller Mock Unit Tests")
+@DisplayName("Cart Controller Mock Tests")
 @ExtendWith(MockitoExtension.class)
 class CartControllerMockTest {
 
