@@ -14,6 +14,17 @@ export default defineConfig({
       'dist',
       'tests',
       'e2e'
-    ]
-  }
-})
+    ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: ['src/utils/priceCalculation.ts'],
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
+      },
+    },
+  },
+})

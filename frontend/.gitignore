@@ -32,3 +32,8 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Vitest Coverage
+coverage/
+.vitest/
+
