@@ -1,26 +1,33 @@
 package com.shopcart.controller;
 
-import com.shopcart.dto.*;
-import com.shopcart.security.CustomUserDetails;
-import com.shopcart.service.CartService;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import com.shopcart.dto.AddToCartRequest;
+import com.shopcart.dto.CartItemResponseDTO;
+import com.shopcart.dto.CartPricingRequest;
+import com.shopcart.dto.CartPricingResponse;
+import com.shopcart.dto.RemoveFromCartRequest;
+import com.shopcart.dto.UpdateCartRequest;
+import com.shopcart.security.CustomUserDetails;
+import com.shopcart.service.CartService;
 
 @DisplayName("Cart Controller Mock Unit Tests")
 @ExtendWith(MockitoExtension.class)
