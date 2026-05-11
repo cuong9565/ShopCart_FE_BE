@@ -132,7 +132,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderResponse.CouponInfo> appliedCoupons = new ArrayList<>();
         
         if (request.getCouponIds() != null && !request.getCouponIds().isEmpty()) {
-            totalCouponDiscount = processCoupons(order, cartItems, request.getCouponIds(), userId, subtotal, appliedCoupons);
+            totalCouponDiscount = processCoupons(order, request.getCouponIds(), userId, subtotal, appliedCoupons);
         }
 
         // ============== STEP 10: CALCULATE FINAL PRICING ==============
@@ -168,10 +168,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public BigDecimal validateAndCalculateCouponDiscount(UUID couponId, UUID userId, BigDecimal orderValue) {
-        Coupon coupon = couponRepository.findById(couponId)
-                .orElseThrow(() -> new CouponException("Mã giảm giá không tồn tại"));
-
+    public BigDecimal validateAndCalculateCouponDiscount(Coupon coupon, UUID userId, BigDecimal orderValue) {
         // Check if coupon is active
         if (coupon.getStatus() != Coupon.CouponStatus.ACTIVE) {
             throw new CouponException("Mã giảm giá không hoạt động");
@@ -195,7 +192,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Check usage limit for user
-        long usageCount = orderCouponRepository.countCouponUsageByUser(couponId, userId);
+        long usageCount = orderCouponRepository.countCouponUsageByUser(coupon.getId(), userId);
         if (usageCount >= coupon.getUsagePerUser()) {
             throw new CouponException("Bạn đã vượt quá giới hạn sử dụng mã này (" + coupon.getUsagePerUser() + " lần)");
         }
@@ -291,14 +288,18 @@ public class OrderServiceImpl implements OrderService {
      * Processes coupons and calculates total discount.
      * Each coupon is validated and applied sequentially.
      */
-    private BigDecimal processCoupons(Order order, List<CartItem> cartItems, List<UUID> couponIds, 
+    private BigDecimal processCoupons(Order order, List<UUID> couponIds, 
                                      UUID userId, BigDecimal subtotal, List<OrderResponse.CouponInfo> appliedCoupons) {
         BigDecimal totalCouponDiscount = BigDecimal.ZERO;
         
         for (UUID couponId : couponIds) {
-            try {
+            try {        
+                // Get coupon info for response
+                Coupon coupon = couponRepository.findById(couponId)
+                        .orElseThrow(() -> new CouponException("Mã giảm giá không tồn tại: " + couponId));
+
                 // Validate coupon against the original subtotal
-                BigDecimal discountAmount = validateAndCalculateCouponDiscount(couponId, userId, subtotal);
+                BigDecimal discountAmount = validateAndCalculateCouponDiscount(coupon, userId, subtotal);
                 
                 // Ensure total discount doesn't exceed subtotal
                 BigDecimal projectedTotal = totalCouponDiscount.add(discountAmount);
@@ -314,10 +315,6 @@ public class OrderServiceImpl implements OrderService {
                 orderCoupon.setCouponId(couponId);
                 orderCoupon.setAppliedAmount(discountAmount);
                 orderCouponRepository.save(orderCoupon);
-                
-                // Get coupon info for response
-                Coupon coupon = couponRepository.findById(couponId)
-                        .orElseThrow(() -> new CouponException("Mã giảm giá không tồn tại: " + couponId));
                 
                 appliedCoupons.add(OrderResponse.CouponInfo.builder()
                         .couponId(couponId)
