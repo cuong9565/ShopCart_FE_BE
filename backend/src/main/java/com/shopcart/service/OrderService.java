@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.shopcart.dto.OrderResponse;
 import com.shopcart.dto.PlaceOrderRequest;
+import com.shopcart.entity.Coupon;
 
 /**
  * Service interface for order operations.
@@ -61,13 +62,13 @@ public interface OrderService {
      * </ul>
      * </p>
      *
-     * @param couponId The UUID of the coupon to validate
+     * @param coupon The coupon to validate
      * @param userId The UUID of the user attempting to use the coupon
      * @param orderValue The total order value for validation
      * @return The calculated discount amount
      * @throws com.shopcart.exception.CouponException if coupon validation fails
      */
-    java.math.BigDecimal validateAndCalculateCouponDiscount(UUID couponId, UUID userId, java.math.BigDecimal orderValue);
+    java.math.BigDecimal validateAndCalculateCouponDiscount(Coupon coupon, UUID userId, java.math.BigDecimal orderValue);
 
     /**
      * Updates inventory quantities for purchased items.
