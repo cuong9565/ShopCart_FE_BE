@@ -7,6 +7,9 @@ import LoginModal from './components/LoginModal';
 import Toast from './components/Toast';
 
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
@@ -15,9 +18,12 @@ function App() {
       <Toast />
 
       <main className="w-full flex-grow">
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order/success" element={<OrderSuccessPage />} />
           <Route path="/product/:slug/:id" element={<ProductDetailPage />} />
         </Routes>
       </main>

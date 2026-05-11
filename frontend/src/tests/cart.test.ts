@@ -4,7 +4,7 @@ import {
   calculateTotal,
   validateStock,
   removeItem
-} from './cart';
+} from '../utils/cart';
 
 describe('Cart Unit Tests', () => {
 
