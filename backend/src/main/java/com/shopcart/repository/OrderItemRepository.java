@@ -1,6 +1,5 @@
 package com.shopcart.repository;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,12 +19,5 @@ import com.shopcart.entity.OrderItem;
  */
 @Repository
 public interface OrderItemRepository extends JpaRepository<OrderItem, UUID> {
-
-    /**
-     * Finds all order items for a specific order.
-     *
-     * @param orderId The order ID to search for
-     * @return List of order items belonging to the order
-     */
-    List<OrderItem> findByOrderId(UUID orderId);
+    // No additional methods needed, JpaRepository provides all standard CRUD operations
 }

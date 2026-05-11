@@ -12,8 +12,6 @@ import com.shopcart.entity.ProductImage;
 public interface ProductImageRepository extends JpaRepository<ProductImage, UUID> {
     List<ProductImage> findByProductId(UUID productId);
     
-    List<ProductImage> findByProductIdOrderBySortOrderAsc(UUID productId);
-    
     @Query("SELECT pi FROM ProductImage pi WHERE pi.product.id = :productId AND pi.isThumbnail = true")
     ProductImage findThumbnailByProductId(@Param("productId") UUID productId);
     

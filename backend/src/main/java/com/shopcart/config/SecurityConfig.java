@@ -22,11 +22,8 @@ public class SecurityConfig {
         .csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
-                .requestMatchers("/api/orders/**").authenticated()
-                .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/shipping-methods/**").permitAll()
                 .requestMatchers("/api/payment-methods/**").permitAll()
                 .anyRequest().authenticated()

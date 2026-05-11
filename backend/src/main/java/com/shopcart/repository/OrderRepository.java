@@ -1,6 +1,5 @@
 package com.shopcart.repository;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,12 +19,5 @@ import com.shopcart.entity.Order;
  */
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
-
-    /**
-     * Finds all orders for a specific user.
-     *
-     * @param userId The user ID to search for
-     * @return List of orders belonging to the user
-     */
-    List<Order> findByUserIdOrderByCreatedAtDesc(UUID userId);
+    // No additional methods needed, JpaRepository provides all standard CRUD operations
 }

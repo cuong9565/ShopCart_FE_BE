@@ -30,12 +30,4 @@ public interface AddressRepository extends JpaRepository<Address, UUID> {
      * @return list of addresses belonging to the user
      */
     List<Address> findByUserId(UUID userId);
-    
-    /**
-     * Check if an address exists by its ID and user ID
-     * @param id the address ID
-     * @param userId the user ID
-     * @return true if address exists, false otherwise
-     */
-    boolean existsByIdAndUserId(UUID id, UUID userId);
 }
