@@ -78,6 +78,16 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>io.github.cdimascio</groupId>
 			<artifactId>dotenv-java</artifactId>
 			<version>3.0.2</version>
@@ -236,8 +246,10 @@
     </executions>
     <configuration>
         <excludes>
-            <exclude>com/shopcart/controller/**</exclude>
+			<exclude>com/shopcart/Main.class</exclude>
             <exclude>com/shopcart/entity/**</exclude>
+            <exclude>com/shopcart/exception/**</exclude>
+            <exclude>com/shopcart/util/**</exclude>
             <exclude>com/shopcart/repository/**</exclude>
             <exclude>com/shopcart/dto/**</exclude>
             <exclude>com/shopcart/security/**</exclude>
