@@ -1,118 +1,95 @@
-// package com.shopcart.service;
-
-// import com.shopcart.util.OrderRequest;
-// import com.shopcart.util.OrderRequest.OrderItemReq;
-// import com.shopcart.util.OrderResponse;
-
-// import java.math.BigDecimal;
-// import java.util.List;
-// import java.util.UUID;
-
-// /**
-//  * Contract cho toàn bộ nghiệp vụ Order.
-//  * Implementation: {@link OrderServiceImpl}
-//  */
-// public interface OrderService {
-
-//     /**
-//      * Tạo đơn hàng mới:
-//      * validate → tính giá → trừ tồn kho → lưu DB → xóa giỏ hàng.
-//      */
-//     OrderResponse createOrder(UUID userId, OrderRequest req);
-
-//     /** Lấy chi tiết một đơn hàng (chỉ chủ đơn mới xem được). */
-//     OrderResponse getOrderById(UUID orderId, UUID userId);
-
-//     /** Lấy toàn bộ đơn hàng của một user. */
-//     List<OrderResponse> getOrdersByUser(UUID userId);
-
-//     /** Lấy đơn hàng của user, lọc theo trạng thái. */
-//     List<OrderResponse> getOrdersByUserAndStatus(UUID userId, String status);
-
-//     /**
-//      * Hủy đơn hàng (chỉ PENDING / CONFIRMED).
-//      * Tự động hoàn lại tồn kho cho từng sản phẩm.
-//      */
-//     OrderResponse cancelOrder(UUID orderId, UUID userId);
-
-//     /**
-//      * Admin / Staff cập nhật trạng thái đơn hàng.
-//      * Kiểm tra chuyển trạng thái hợp lệ trước khi lưu.
-//      */
-//     OrderResponse updateStatus(UUID orderId, String newStatus);
-
-//     /**
-//      * Tính tổng tiền đơn hàng (subtotal – discount + shippingFee).
-//      * Dùng cho preview checkout hoặc unit test.
-//      */
-//     BigDecimal calculateOrderTotal(List<OrderItemReq> items,
-//                                    String couponCode,
-//                                    BigDecimal shippingFee);
-
-//     /**
-//      * Kiểm tra tất cả sản phẩm trong danh sách có đủ tồn kho không.
-//      * Trả về {@code false} ngay khi gặp sản phẩm đầu tiên không đủ.
-//      */
-//     boolean checkStockBeforeOrder(List<OrderItemReq> items);
-// }
-
 package com.shopcart.service;
 
-import com.shopcart.entity.OrderItemEntity;
-import com.shopcart.dto.OrderResponse;
-
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+import com.shopcart.dto.OrderResponse;
+import com.shopcart.dto.PlaceOrderRequest;
+import com.shopcart.entity.CartItem;
+import com.shopcart.entity.Coupon;
+
 /**
- * Contract cho toàn bộ nghiệp vụ Order.
- * Implementation: {@link OrderServiceImpl}
+ * Service interface for order operations.
+ *
+ * <p>This service provides business logic for managing orders,
+ * including order placement, coupon validation, payment processing, and inventory management.</p>
+ *
+ * <p><b>Key Operations:</b>
+ * <ul>
+ *   <li>Place orders with comprehensive validation and processing</li>
+ *   <li>Validate and apply coupons with usage limit checking</li>
+ *   <li>Process payments and create payment records</li>
+ *   <li>Manage inventory updates during order processing</li>
+ *   <li>Retrieve order details and user order history</li>
+ * </ul>
+ *
+ * @author ShopCart Team
+ * @version 1.0
+ * @since 2026-05-10
  */
 public interface OrderService {
 
     /**
-     * Tạo đơn hàng mới:
-     * Nhận các tham số trực tiếp thay vì qua OrderRequest object.
+     * Places a new order for a user with comprehensive validation and processing.
+     *
+     * <p>This method performs the complete order placement process:
+     * <ul>
+     *   <li>Validates user, address, shipping method, and payment method</li>
+     *   <li>Validates each coupon for eligibility and usage limits</li>
+     *   <li>Calculates pricing including discounts and shipping fees</li>
+     *   <li>Creates order, order items, order coupons, and order payment records</li>
+     *   <li>Updates inventory to reflect purchased quantities</li>
+     *   <li>Clears user's cart after successful order placement</li>
+     * </ul>
+     * </p>
+     *
+     * @param userId The UUID of the user placing the order
+     * @param request The order placement request with all necessary details
+     * @return Complete order response with all order details
+     * @throws IllegalArgumentException if validation fails for any component
+     * @throws IllegalStateException if inventory is insufficient or other business rule violations
+     * @throws com.shopcart.exception.CouponException if coupon validation fails
      */
-    OrderResponse createOrder(UUID userId, 
-                              UUID addressId, 
-                              String couponCode, 
-                              Integer paymentMethod, 
-                              BigDecimal shippingFee, 
-                              List<OrderItemEntity> itemsToCreate);
-
-    /** Lấy chi tiết một đơn hàng (chỉ chủ đơn hoặc admin mới xem được). */
-    OrderResponse getOrderById(UUID orderId, UUID userId);
-
-    /** Lấy toàn bộ đơn hàng của một user. */
-    List<OrderResponse> getOrdersByUser(UUID userId);
-
-    /** Lấy đơn hàng của user, lọc theo trạng thái. */
-    List<OrderResponse> getOrdersByUserAndStatus(UUID userId, String status);
+    OrderResponse placeOrder(UUID userId, PlaceOrderRequest request);
+    
+    /**
+     * Validates a coupon for a specific user and order value.
+     *
+     * <p>This method checks:
+     * <ul>
+     *   <li>Coupon exists and is active</li>
+     *   <li>Coupon is within valid date range</li>
+     *   <li>User hasn't exceeded usage limits</li>
+     *   <li>Order value meets minimum requirements</li>
+     * </ul>
+     * </p>
+     *
+     * @param coupon The coupon to validate
+     * @param userId The UUID of the user attempting to use the coupon
+     * @param orderValue The total order value for validation
+     * @return The calculated discount amount
+     * @throws com.shopcart.exception.CouponException if coupon validation fails
+     */
+    java.math.BigDecimal validateAndCalculateCouponDiscount(Coupon coupon, UUID userId, java.math.BigDecimal orderValue);
 
     /**
-     * Hủy đơn hàng (chỉ trạng thái PENDING / CONFIRMED mới được hủy).
-     * Tự động hoàn lại tồn kho cho từng sản phẩm.
+     * Updates inventory quantities for purchased items.
+     *
+     * <p>This method reduces inventory quantities for all items in an order.
+     * Throws exception if any item has insufficient inventory.</p>
+     *
+     * @param userId The UUID of the user placing the order
+     * @param cartItems The list of cart items to update inventory for
+     * @throws IllegalStateException if any item has insufficient inventory
      */
-    OrderResponse cancelOrder(UUID orderId, UUID userId);
+    void updateInventoryForOrder(UUID userId, List<CartItem> cartItems);
 
     /**
-     * Admin / Staff cập nhật trạng thái đơn hàng.
-     * Kiểm tra tính hợp lệ của việc chuyển trạng thái (StateMachine).
+     * Clears the user's shopping cart after successful order placement.
+     *
+     * @param userId The UUID of the user whose cart to clear
+     * @param cartItems The list of cart items to clear
+     * @return The number of cart items that were removed
      */
-    OrderResponse updateStatus(UUID orderId, String newStatus);
-
-    /**
-     * Tính tổng tiền đơn hàng (subtotal – discount + shippingFee).
-     * Sử dụng danh sách các Item thực thể để tính toán.
-     */
-    BigDecimal calculateOrderTotal(List<OrderItemEntity> items,
-                                   String couponCode,
-                                   BigDecimal shippingFee);
-
-    /**
-     * Kiểm tra tồn kho trước khi đặt hàng.
-     */
-    boolean checkStockBeforeOrder(List<OrderItemEntity> items);
+    int clearUserCart(UUID userId, List<CartItem> cartItems);
 }

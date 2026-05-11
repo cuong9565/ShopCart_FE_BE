@@ -22,12 +22,10 @@ public class SecurityConfig {
         .csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
-                .requestMatchers("/api/orders/**").permitAll()
-                .requestMatchers("/api/addresses/**").permitAll()
-                .requestMatchers("/api/users/**").permitAll()
+                .requestMatchers("/api/shipping-methods/**").permitAll()
+                .requestMatchers("/api/payment-methods/**").permitAll()
                 .anyRequest().authenticated()
         )
         .sessionManagement(session -> session

@@ -1,5 +1,8 @@
 package com.shopcart.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -9,16 +12,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.shopcart.dto.AddToCartRequest;
 import com.shopcart.dto.CartItemResponseDTO;
-import com.shopcart.dto.UpdateCartRequest;
+import com.shopcart.dto.CartPricingRequest;
+import com.shopcart.dto.CartPricingResponse;
 import com.shopcart.entity.CartItem;
+import com.shopcart.entity.Coupon;
 import com.shopcart.entity.Inventory;
 import com.shopcart.entity.Product;
 import com.shopcart.entity.ProductImage;
+import com.shopcart.entity.ShippingMethod;
 import com.shopcart.entity.User;
+import com.shopcart.exception.CouponValidationException;
 import com.shopcart.repository.CartItemRepository;
+import com.shopcart.repository.CouponRepository;
 import com.shopcart.repository.InventoryRepository;
+import com.shopcart.repository.OrderCouponRepository;
 import com.shopcart.repository.ProductImageRepository;
 import com.shopcart.repository.ProductRepository;
+import com.shopcart.repository.ShippingMethodRepository;
 import com.shopcart.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -43,6 +53,9 @@ public class CartServiceImpl implements CartService {
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
     private final ProductImageRepository productImageRepository;
+    private final CouponRepository couponRepository;
+    private final ShippingMethodRepository shippingMethodRepository;
+    private final OrderCouponRepository orderCouponRepository;
     
     @Override
     @Transactional(readOnly = true)
@@ -95,27 +108,6 @@ public class CartServiceImpl implements CartService {
             return convertToResponseDTO(savedCartItem);
         }
     }
-    
-    @Override
-    public CartItemResponseDTO updateCartItemQuantity(UUID userId, UUID cartItemId, UpdateCartRequest request) {
-        CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new IllegalArgumentException("Cart item not found with id: " + cartItemId));
-        
-        // Validate cart item belongs to user
-        if (!cartItem.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Cart item does not belong to user");
-        }
-        
-        // Check inventory
-        Inventory inventory = inventoryRepository.findByProductId(cartItem.getProduct().getId());
-        if (inventory == null || inventory.getQuantity() < request.getQuantity()) {
-            throw new IllegalArgumentException("Insufficient inventory for product: " + cartItem.getProduct().getName());
-        }
-        
-        cartItem.setQuantity(request.getQuantity());
-        CartItem updatedCartItem = cartItemRepository.save(cartItem);
-        return convertToResponseDTO(updatedCartItem);
-    }
 
     @Override
     public CartItemResponseDTO updateProductQuantityFromCart(UUID userId, UUID productId, Integer quantity) {
@@ -136,39 +128,24 @@ public class CartServiceImpl implements CartService {
     }
     
     @Override
-    public boolean removeFromCart(UUID userId, UUID cartItemId) {
-        CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElse(null);
-        
-        if (cartItem == null || !cartItem.getUser().getId().equals(userId)) {
-            return false;
-        }
-        
-        cartItemRepository.delete(cartItem);
-        return true;
-    }
-    
-    @Override
     public boolean removeProductFromCart(UUID userId, UUID productId) {
         int deletedRows = cartItemRepository.deleteByUserIdAndProductId(userId, productId);
         return deletedRows > 0;
     }
     
     @Override
-    public int clearCart(UUID userId) {
-        return cartItemRepository.deleteByUserId(userId);
-    }
-    
-    @Override
     @Transactional(readOnly = true)
-    public long getCartItemCount(UUID userId) {
-        return cartItemRepository.countByUserId(userId);
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public long getTotalCartQuantity(UUID userId) {
-        return cartItemRepository.getTotalQuantityByUserId(userId);
+    public java.math.BigDecimal getCartTotalAmount(UUID userId) {
+        List<CartItem> cartItems = cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId);
+        
+        if (cartItems.isEmpty()) {
+            return java.math.BigDecimal.ZERO;
+        }
+        
+        return cartItems.stream()
+                .map(cartItem -> cartItem.getProduct().getPrice()
+                        .multiply(java.math.BigDecimal.valueOf(cartItem.getQuantity())))
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
     }
     
     /**
@@ -197,5 +174,247 @@ public class CartServiceImpl implements CartService {
         dto.setCreatedAt(cartItem.getCreatedAt());
         
         return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CartPricingResponse calculateCartPricing(UUID userId, CartPricingRequest request) {
+        // Validate user exists
+        userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        // Get cart items and calculate base totals
+        List<CartItem> cartItems = cartItemRepository.findByUserIdOrderByCreatedAtAsc(userId);
+        BigDecimal totalProductAmount = calculateCartTotal(cartItems);
+        
+        // Initialize response
+        CartPricingResponse response = new CartPricingResponse();
+        response.setTotalProductAmount(totalProductAmount);
+        response.setTotalAfterProductDiscounts(totalProductAmount);
+        response.setBaseShippingFee(BigDecimal.ZERO);
+        response.setFinalShippingFee(BigDecimal.ZERO);
+        response.setFinalTotalAmount(totalProductAmount);
+
+        // Apply order coupons
+        BigDecimal orderDiscountAmount = BigDecimal.ZERO;
+        List<CartPricingResponse.AppliedCouponDTO> appliedCoupons = new ArrayList<>();
+
+        if (request.getCouponCodes() != null && !request.getCouponCodes().isEmpty()) {
+            for (String couponCode : request.getCouponCodes()) {
+                Coupon coupon = couponRepository.findByCode(couponCode);
+                if (coupon == null) {
+                    continue; // Skip invalid coupons
+                }
+
+                // Validate coupon is active and valid
+                try {
+                    isCouponValid(coupon, totalProductAmount, userId);
+                } catch (CouponValidationException e) {
+                    continue; // Skip invalid coupons
+                }
+
+                // Only apply order scope coupons to product total
+                if (coupon.getCouponScope() == Coupon.CouponScope.ORDER) {
+                    BigDecimal discountAmount = calculateOrderDiscount(coupon, response.getTotalAfterProductDiscounts());
+                    orderDiscountAmount = orderDiscountAmount.add(discountAmount);
+
+                    // Add to applied coupons list
+                    CartPricingResponse.AppliedCouponDTO appliedCoupon = new CartPricingResponse.AppliedCouponDTO();
+                    appliedCoupon.setCode(coupon.getCode());
+                    appliedCoupon.setDiscountType(coupon.getDiscountType().name());
+                    appliedCoupon.setDiscountValue(coupon.getDiscountValue());
+                    appliedCoupon.setAppliedAmount(discountAmount);
+                    appliedCoupon.setScope(coupon.getCouponScope().name());
+                    appliedCoupons.add(appliedCoupon);
+                }
+            }
+        }
+
+        response.setTotalAfterProductDiscounts(response.getTotalProductAmount().subtract(orderDiscountAmount));
+
+        // Handle shipping method and fees
+        BigDecimal baseShippingFee = BigDecimal.ZERO;
+        BigDecimal shippingDiscountAmount = BigDecimal.ZERO;
+        LocalDate estimatedMinDate = null;
+        LocalDate estimatedMaxDate = null;
+        CartPricingResponse.ShippingMethodDTO shippingMethodDTO = null;
+
+        if (request.getShippingMethodId() != null) {
+            ShippingMethod shippingMethod = shippingMethodRepository.findById(request.getShippingMethodId())
+                    .orElseThrow(() -> new IllegalArgumentException("Shipping method not found with id: " + request.getShippingMethodId()));
+
+            if (shippingMethod.getIsActive()) {
+                baseShippingFee = shippingMethod.getBaseFee();
+                Integer minDays = shippingMethod.getEstimatedDaysMin();
+                Integer maxDays = shippingMethod.getEstimatedDaysMax();
+                
+                // Calculate actual delivery dates
+                LocalDate currentDate = LocalDate.now();
+                if (minDays != null) {
+                    estimatedMinDate = currentDate.plusDays(minDays);
+                }
+                if (maxDays != null) {
+                    estimatedMaxDate = currentDate.plusDays(maxDays);
+                }
+
+                // Apply shipping coupons
+                if (request.getCouponCodes() != null && !request.getCouponCodes().isEmpty()) {
+                    for (String couponCode : request.getCouponCodes()) {
+                        Coupon coupon = couponRepository.findByCode(couponCode);
+                        if (coupon == null) {
+                            continue;
+                        }
+
+                        try {
+                            isCouponValid(coupon, response.getTotalAfterProductDiscounts(), userId);
+                        } catch (CouponValidationException e) {
+                            continue;
+                        }
+
+                        // Only apply shipping scope coupons to shipping fee
+                        if (coupon.getCouponScope() == Coupon.CouponScope.SHIPPING) {
+                            BigDecimal discountAmount = calculateShippingDiscount(coupon, baseShippingFee);
+                            shippingDiscountAmount = shippingDiscountAmount.add(discountAmount);
+
+                            // Add to applied coupons list
+                            CartPricingResponse.AppliedCouponDTO appliedCoupon = new CartPricingResponse.AppliedCouponDTO();
+                            appliedCoupon.setCode(coupon.getCode());
+                            appliedCoupon.setDiscountType(coupon.getDiscountType().name());
+                            appliedCoupon.setDiscountValue(coupon.getDiscountValue());
+                            appliedCoupon.setAppliedAmount(discountAmount);
+                            appliedCoupon.setScope(coupon.getCouponScope().name());
+                            appliedCoupons.add(appliedCoupon);
+                        }
+                    }
+                }
+
+                // Create shipping method DTO
+                shippingMethodDTO = new CartPricingResponse.ShippingMethodDTO();
+                shippingMethodDTO.setId(shippingMethod.getId());
+                shippingMethodDTO.setCode(shippingMethod.getCode());
+                shippingMethodDTO.setName(shippingMethod.getName());
+                shippingMethodDTO.setDescription(shippingMethod.getDescription());
+                shippingMethodDTO.setBaseFee(shippingMethod.getBaseFee());
+            }
+        }
+
+        BigDecimal finalShippingFee = baseShippingFee.subtract(shippingDiscountAmount);
+        if (finalShippingFee.compareTo(BigDecimal.ZERO) < 0) {
+            finalShippingFee = BigDecimal.ZERO;
+        }
+
+        // Set final values
+        response.setBaseShippingFee(baseShippingFee);
+        response.setFinalShippingFee(finalShippingFee);
+        response.setFinalTotalAmount(response.getTotalAfterProductDiscounts().add(finalShippingFee));
+        response.setAppliedCoupons(appliedCoupons);
+        response.setShippingMethod(shippingMethodDTO);
+        response.setEstimatedDeliveryMinDate(estimatedMinDate);
+        response.setEstimatedDeliveryMaxDate(estimatedMaxDate);
+
+        return response;
+    }
+
+    /**
+     * Calculates the total amount for a list of cart items.
+     */
+    private BigDecimal calculateCartTotal(List<CartItem> cartItems) {
+        if (cartItems.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        return cartItems.stream()
+                .map(item -> item.getProduct().getPrice()
+                        .multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Validates if a coupon can be applied.
+     * 
+     * @throws CouponValidationException if coupon is not valid
+     */
+    private void isCouponValid(Coupon coupon, BigDecimal orderValue, UUID userId) {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+        // Check status
+        if (coupon.getStatus() != Coupon.CouponStatus.ACTIVE) {
+            throw new CouponValidationException.InactiveCouponException(coupon.getCode());
+        }
+
+        // Check date range
+        if (coupon.getStartDate() != null && now.isBefore(coupon.getStartDate())) {
+            throw new CouponValidationException.CouponNotStartedException(coupon.getCode());
+        }
+
+        if (coupon.getExpiryDate() != null && now.isAfter(coupon.getExpiryDate())) {
+            throw new CouponValidationException.ExpiredCouponException(coupon.getCode());
+        }
+
+        // Check minimum order value
+        if (orderValue.compareTo(coupon.getMinOrderValue()) < 0) {
+            throw new CouponValidationException.MinimumOrderValueException(
+                coupon.getCode(), 
+                coupon.getMinOrderValue().toString()
+            );
+        }
+
+        // Check usage limit per user
+        long usageCount = orderCouponRepository.countCouponUsageByUser(coupon.getId(), userId);
+        if (usageCount >= coupon.getUsagePerUser()) {
+            throw new CouponValidationException.UsageLimitExceededException(coupon.getCode());
+        }
+    }
+
+    /**
+     * Calculates discount amount for order coupons.
+     */
+    private BigDecimal calculateOrderDiscount(Coupon coupon, BigDecimal orderValue) {
+        BigDecimal discountAmount;
+
+        if (coupon.getDiscountType() == Coupon.DiscountType.FIXED) {
+            discountAmount = coupon.getDiscountValue();
+        } else { // PERCENT
+            discountAmount = orderValue.multiply(coupon.getDiscountValue())
+                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+        }
+
+        // Apply maximum discount limit if set
+        if (coupon.getMaxDiscount() != null && discountAmount.compareTo(coupon.getMaxDiscount()) > 0) {
+            discountAmount = coupon.getMaxDiscount();
+        }
+
+        // Ensure discount doesn't exceed order value
+        if (discountAmount.compareTo(orderValue) > 0) {
+            discountAmount = orderValue;
+        }
+
+        return discountAmount;
+    }
+
+    /**
+     * Calculates discount amount for shipping coupons.
+     */
+    private BigDecimal calculateShippingDiscount(Coupon coupon, BigDecimal shippingFee) {
+        BigDecimal discountAmount;
+
+        if (coupon.getDiscountType() == Coupon.DiscountType.FIXED) {
+            discountAmount = coupon.getDiscountValue();
+        } else { // PERCENT
+            discountAmount = shippingFee.multiply(coupon.getDiscountValue())
+                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+        }
+
+        // Apply maximum discount limit if set
+        if (coupon.getMaxDiscount() != null && discountAmount.compareTo(coupon.getMaxDiscount()) > 0) {
+            discountAmount = coupon.getMaxDiscount();
+        }
+
+        // Ensure discount doesn't exceed shipping fee
+        if (discountAmount.compareTo(shippingFee) > 0) {
+            discountAmount = shippingFee;
+        }
+
+        return discountAmount;
     }
 }

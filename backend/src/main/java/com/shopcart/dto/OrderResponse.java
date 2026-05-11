@@ -1,93 +1,145 @@
-// package com.shopcart.dto;
-
-// import lombok.AllArgsConstructor;
-// import lombok.Data;
-// import lombok.NoArgsConstructor;
-
-// import java.math.BigDecimal;
-// import java.time.LocalDateTime;
-// import java.util.List;
-// import java.util.UUID;
-
-// /** DTO trả về thông tin đơn hàng */
-// @Data
-// @NoArgsConstructor
-// @AllArgsConstructor
-// public class OrderResponse {
-
-//         private UUID id;
-//         private UUID userId;
-//         private UUID addressId;
-//         private List<ItemResp> items;
-//         private BigDecimal totalPrice;
-//         private BigDecimal discount;
-//         private BigDecimal shippingFee;
-//         private BigDecimal finalPrice;
-//         private String status;
-//         private String couponCode;
-//         private LocalDateTime createdAt;
-// @Data
-// @NoArgsConstructor
-// @AllArgsConstructor
-//         public static class ItemResp {
-//                 private UUID id;
-//                 private UUID productId;
-//                 private String productName;
-//                 private BigDecimal unitPrice;
-//                 private Integer quantity;
-//                 private BigDecimal lineTotal;
-//         }
-// }
-
-
 package com.shopcart.dto;
 
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
- * DTO trả về thông tin chi tiết đơn hàng cho Client
+ * Data Transfer Object for order responses.
+ *
+ * <p>This DTO encapsulates order information returned to the client after
+ * successful order placement, including order details, items, and pricing.</p>
+ *
+ * @author ShopCart Team
+ * @version 1.0
+ * @since 2026-05-10
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class OrderResponse {
-
-    private UUID id;
-    private UUID userId;
-    private UUID addressId;
     
-    // Danh sách các mặt hàng trong đơn
-    private List<ItemResp> items;
-    
-    private BigDecimal subtotal;    // Tổng tiền hàng (trước giảm giá)
-    private BigDecimal discount;    // Số tiền được giảm
-    private BigDecimal shippingFee; // Phí vận chuyển
-    private BigDecimal finalPrice;  // Tổng thanh toán cuối cùng
-    
-    private String status;
-    private String couponCode;      // Mã coupon đã áp dụng (nếu có)
-    
-    private LocalDateTime createdAt;
-    private LocalDateTime paidAt;    // Thêm thông tin thời gian thanh toán từ PaymentEntity
-
     /**
-     * DTO chi tiết từng item
+     * Unique identifier of the order.
+     */
+    private UUID id;
+    
+    /**
+     * Order status.
+     */
+    private String status;
+    
+    /**
+     * Shipping information.
+     */
+    private ShippingInfo shippingInfo;
+    
+    /**
+     * Payment information.
+     */
+    private PaymentInfo paymentInfo;
+    
+    /**
+     * Order items.
+     */
+    private List<OrderItemResponse> items;
+    
+    /**
+     * Pricing information.
+     */
+    private PricingInfo pricingInfo;
+    
+    /**
+     * Timestamps.
+     */
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    
+    /**
+     * Applied coupons information.
+     */
+    private List<CouponInfo> appliedCoupons;
+    
+    /**
+     * Nested class for shipping information.
      */
     @Data
+    @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    public static class ShippingInfo {
+        private String fullName;
+        private String phone;
+        private String addressLine;
+        private String city;
+        private String district;
+        private String ward;
+        private String methodName;
+        private BigDecimal shippingFee;
+        private Integer estimatedDeliveryMin;
+        private Integer estimatedDeliveryMax;
+    }
+    
+    /**
+     * Nested class for payment information.
+     */
+    @Data
     @Builder
-    public static class ItemResp {
-        private UUID id;
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PaymentInfo {
+        private String methodName;
+        private String status;
+        private LocalDateTime paidAt;
+    }
+    
+    /**
+     * Nested class for order item information.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class OrderItemResponse {
         private UUID productId;
-        private String productName;  // Lấy từ ProductEntity khi mapping
-        private BigDecimal unitPrice; // Giá tại thời điểm mua
+        private String productName;
         private Integer quantity;
-        private BigDecimal lineTotal; // unitPrice * quantity
+        private BigDecimal price;
+        private BigDecimal totalPrice;
+    }
+    
+    /**
+     * Nested class for pricing information.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PricingInfo {
+        private BigDecimal subtotal;
+        private BigDecimal shippingFee;
+        private BigDecimal discount;
+        private BigDecimal couponDiscount;
+        private BigDecimal finalPrice;
+    }
+    
+    /**
+     * Nested class for coupon information.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CouponInfo {
+        private UUID couponId;
+        private String code;
+        private BigDecimal discountAmount;
     }
 }

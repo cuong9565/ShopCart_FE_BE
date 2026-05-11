@@ -1,0 +1,21 @@
+{
+  "name": "shopcart-performance-tests",
+  "version": "1.0.0",
+  "description": "Performance testing suite for ShopCart application using k6",
+  "scripts": {
+    "test:cart": "k6 run tests/cart-performance-test.js",
+    "test:order": "k6 run tests/order-performance-test.js",
+    "test:checkout": "k6 run tests/checkout-performance-test.js",
+    "test:load": "k6 run tests/load-test.js",
+    "test:stress": "k6 run tests/stress-test.js",
+    "report:cart": "k6 run --out html=cart-report.html tests/cart-performance-test.js",
+    "report:order": "k6 run --out html=order-report.html tests/order-performance-test.js",
+    "report:checkout": "k6 run --out html=checkout-report.html tests/checkout-performance-test.js"
+  },
+  "devDependencies": {
+    "k6": "^0.47.0",
+    "k6-reporter": "^1.0.0"
+  },
+  "keywords": ["performance", "testing", "k6", "load-testing"],
+  "author": "ShopCart Team"
+}

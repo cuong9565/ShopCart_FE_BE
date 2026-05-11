@@ -5,12 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class Main {
-	static {
-		// Load environment
-		new com.shopcart.config.EnvLoader();
-    }
-
 	public static void main(String[] args) {
+		new com.shopcart.config.EnvLoader();
 		SpringApplication.run(Main.class, args);
 	}
 }
