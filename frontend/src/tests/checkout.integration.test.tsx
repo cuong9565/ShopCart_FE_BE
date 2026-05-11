@@ -3,9 +3,10 @@
  * Integration tests for frontend checkout components (CheckoutSummary, PriceCalculator, InventoryWarning)
  * using Vitest, React Testing Library, and jsdom.
  */
-import { describe, test, expect, afterEach } from 'vitest';
+import { describe, test, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import React from 'react';
+import * as priceCalculation from '../utils/priceCalculation';
 
 // Tự động dọn dẹp DOM sau mỗi test case tránh rò rỉ dữ liệu component
 afterEach(() => {
@@ -132,19 +133,19 @@ describe('Kiểm thử tích hợp Component PriceCalculator (Tính giá thời 
     // Chọn loại mã giảm giá theo phần trăm (PERCENT)
     fireEvent.change(selectType, { target: { value: 'PERCENT' } });
 
-    // Nhập giảm 10% (10% của 1,000,000đ là 100,000đ)
+    // Nhập giảm 20% (20% của 1,000,000đ là 200,000đ)
     const couponInput = screen.getByTestId('input-coupon-value');
-    fireEvent.change(couponInput, { target: { value: '10' } });
+    fireEvent.change(couponInput, { target: { value: '20' } });
 
-    // Đặt mức giảm tối đa maxDiscount = 50,000đ
+    // Đặt mức giảm tối đa maxDiscount = 60,000đ
     const maxDiscountInput = screen.getByTestId('input-max-discount');
-    fireEvent.change(maxDiscountInput, { target: { value: '50000' } });
+    fireEvent.change(maxDiscountInput, { target: { value: '60000' } });
 
     await waitFor(() => {
-      // 10% là 100k nhưng bị chặn tối đa 50k
-      expect(screen.getByTestId('calc-discount').textContent).toContain('-50.000');
-      // 1,000,000đ + 30,000đ - 50,000đ = 980,000đ
-      expect(screen.getByTestId('calc-total').textContent).toContain('980.000');
+      // 20% là 200k nhưng bị chặn tối đa 60k
+      expect(screen.getByTestId('calc-discount').textContent).toContain('-60.000');
+      // 1,000,000đ + 30,000đ - 60,000đ = 970,000đ
+      expect(screen.getByTestId('calc-total').textContent).toContain('970.000');
     });
   });
 });
@@ -198,5 +199,25 @@ describe('Kiểm thử tích hợp Component InventoryWarning (Cảnh báo hàng
     expect(warningItems).toHaveLength(2);
     expect(warningItems[0].textContent).toContain('MacBook Pro');
     expect(warningItems[1].textContent).toContain('Tai nghe Sony');
+  });
+
+  test('TC4: Hiển thị ID sản phẩm dự phòng nếu không tìm thấy thông tin sản phẩm gốc (Defensive Fallback)', () => {
+    const mockItems = [
+      { productId: 'p1', productName: 'MacBook Pro', requested: 5, stock: 2 },
+    ];
+
+    // Spy và ép kiểu trả về của checkInventoryAvailability để giả lập ID lạ
+    const spy = vi.spyOn(priceCalculation, 'checkInventoryAvailability').mockReturnValueOnce({
+      available: false,
+      insufficientItems: [
+        { productId: 'p-unknown', requested: 5, stock: 2 } // p-unknown không có trong mockItems
+      ]
+    });
+
+    render(<InventoryWarning items={mockItems} />);
+
+    expect(screen.getByText('Sản phẩm #p-unknown')).toBeTruthy();
+
+    spy.mockRestore();
   });
 });

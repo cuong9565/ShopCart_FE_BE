@@ -19,7 +19,13 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/utils/priceCalculation.ts'],
+      include: [
+        'src/utils/priceCalculation.ts',
+        'src/utils/cart.ts',
+        'src/components/CheckoutSummary.tsx',
+        'src/components/PriceCalculator.tsx',
+        'src/components/InventoryWarning.tsx'
+      ],
       thresholds: {
         lines: 90,
         functions: 90,
