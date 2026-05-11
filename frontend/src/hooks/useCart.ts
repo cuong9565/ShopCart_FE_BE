@@ -86,6 +86,7 @@ export const useCart = (autoFetch = false) => {
       await cartService.updateQuantity(productId, quantity);
       const data = await cartService.getCart();
       setCart(data);
+      window.dispatchEvent(new Event('cartUpdated'));
       return true;
     } catch (err: any) {
       console.log('Update quantity error:', err);
@@ -115,6 +116,7 @@ export const useCart = (autoFetch = false) => {
       setLoading(true);
       await cartService.removeItem(productId);
       await fetchCart();
+      window.dispatchEvent(new Event('cartUpdated'));
       showToast('Đã xóa sản phẩm khỏi giỏ hàng', 'success');
       return true;
     } catch (err: any) {
