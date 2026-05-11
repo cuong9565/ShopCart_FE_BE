@@ -1,9 +1,11 @@
 package com.shopcart.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.shopcart.dto.OrderResponse;
 import com.shopcart.dto.PlaceOrderRequest;
+import com.shopcart.entity.CartItem;
 import com.shopcart.entity.Coupon;
 
 /**
@@ -77,15 +79,17 @@ public interface OrderService {
      * Throws exception if any item has insufficient inventory.</p>
      *
      * @param userId The UUID of the user placing the order
+     * @param cartItems The list of cart items to update inventory for
      * @throws IllegalStateException if any item has insufficient inventory
      */
-    void updateInventoryForOrder(UUID userId);
+    void updateInventoryForOrder(UUID userId, List<CartItem> cartItems);
 
     /**
      * Clears the user's shopping cart after successful order placement.
      *
      * @param userId The UUID of the user whose cart to clear
+     * @param cartItems The list of cart items to clear
      * @return The number of cart items that were removed
      */
-    int clearUserCart(UUID userId);
+    int clearUserCart(UUID userId, List<CartItem> cartItems);
 }
