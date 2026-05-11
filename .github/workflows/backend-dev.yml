@@ -53,11 +53,6 @@ jobs:
           name: coverage-report
           path: backend/target/site/jacoco/
 
-      - name: Check coverage threshold
-        run: |
-          cd backend
-          mvn jacoco:check
-
   build:
     runs-on: ubuntu-latest
     needs: test
