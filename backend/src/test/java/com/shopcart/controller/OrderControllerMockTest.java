@@ -54,9 +54,9 @@ import com.shopcart.service.OrderService;
  * @version 1.0
  * @since 2026-05-11
  */
-@DisplayName("Order Controller Unit Tests")
+@DisplayName("Order Controller Mock Tests")
 @ExtendWith(MockitoExtension.class)
-class OrderControllerUnitTest {
+class OrderControllerMockTest {
 
     @Mock
     private OrderService orderService;
@@ -70,7 +70,7 @@ class OrderControllerUnitTest {
     private OrderResponse mockResponse;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         // Setup test data
         testUserId = UUID.randomUUID();
         
@@ -465,9 +465,10 @@ class OrderControllerUnitTest {
     void testPlaceOrder_NullUserDetails() {
         // Act & Assert - This should work with null user details if the controller handles it
         // but based on the implementation, it will likely throw NullPointerException
-        assertThrows(NullPointerException.class, () -> {
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> {
             orderController.placeOrder(null, validRequest);
         });
+        assertNotNull(exception);
     }
 
     @Test
