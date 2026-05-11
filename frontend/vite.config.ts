@@ -8,7 +8,8 @@ export default defineConfig({
     tailwindcss(),
   ],
   test: {
-    include: ['src/**/*.test.ts'],
+    environment: 'jsdom',
+    include: ['src/**/*.test.{ts,tsx}'],
     exclude: [
       'node_modules',
       'dist',

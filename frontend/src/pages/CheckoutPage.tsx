@@ -378,6 +378,7 @@ const CheckoutPage = () => {
             {/* ── 4. COUPON ─────────────────────────────────────────────── */}
             <div className="bg-white rounded-2xl shadow-sm mb-5">
               <button
+                data-testid="coupon-accordion-btn"
                 onClick={() => setCouponOpen((v) => !v)}
                 className="w-full flex items-center justify-between p-6 text-left"
               >
@@ -405,6 +406,7 @@ const CheckoutPage = () => {
                         return (
                           <div
                             key={coupon.code}
+                            data-testid={`coupon-item-${coupon.code}`}
                             onClick={() => applicable && toggleCoupon(coupon.code)}
                             className={`relative p-4 rounded-xl border-2 transition ${selected ? 'border-green-400 bg-green-50' : applicable ? 'border-gray-200 hover:border-green-300 cursor-pointer' : 'border-gray-100 opacity-50 cursor-not-allowed bg-gray-50'}`}
                           >

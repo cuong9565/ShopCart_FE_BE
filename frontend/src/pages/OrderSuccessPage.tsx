@@ -39,7 +39,7 @@ const OrderSuccessPage = () => {
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm p-8 text-center mb-6">
           <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 text-6xl mb-4" />
-          <h1 className="text-3xl font-black text-gray-900 mb-2">Đặt hàng thành công!</h1>
+          <h1 data-testid="order-success" className="text-3xl font-black text-gray-900 mb-2">Đặt hàng thành công!</h1>
           <p className="text-gray-500 mb-1">
             Mã đơn hàng: <span className="font-semibold text-gray-800 font-mono">#{order.id.slice(0, 8).toUpperCase()}</span>
           </p>

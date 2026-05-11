@@ -6,3 +6,8 @@ export const orderService = {
     return axiosClient.post('/orders', data);
   },
 };
+
+export const createOrder = async (data: any): Promise<any> => {
+  return axiosClient.post('/orders', data);
+};
+
